@@ -71,4 +71,8 @@ nunit-*.xml
 # oryn
 .env
 !.env.example
+# Laufzeitdaten von Grafana, Loki, Prometheus (inkl. alter Kopien wie data.stale-*)
 monitoring/data/
+monitoring/data*/
+*.db
+*.sqlite

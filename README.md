@@ -2,8 +2,8 @@
 
 Eigene LLMs von aussen nutzen: **API mit Key**, **eigene Modelle**, **Chat (Open WebUI)** und **Monitoring** an einem Ort.
 Läuft auf einem Windows-PC mit Ollama (nativ, R9700 32 GB + RX 7800 XT 16 GB) und Docker Desktop. Von aussen erreichbar über den
-Traefik im [homelab-proxy](https://github.com/brandadrian/homelab-proxy): Er liest die Routing-Regeln aus den Labels der Container hier,
-im homelab-proxy selbst steht nichts von oryn.
+Traefik im [oryn-gateway](https://github.com/brandadrian/oryn-gateway): Er liest die Routing-Regeln aus den Labels der Container hier,
+im oryn-gateway selbst stehen keine Regeln für diese Dienste.
 
 | Adresse | Was |
 |---------|-----|
@@ -13,9 +13,8 @@ im homelab-proxy selbst steht nichts von oryn.
 | `https://chat.oryn.brandadrian.com` | Open WebUI (`openwebui/`) |
 | `http://localhost:3000/monitor` | Grafana lokal mit Admin-Login |
 
-Alte Adressen laufen vorerst parallel: `ollama-monitoring.homelab.brandadrian.com` (leitet auf `/monitor`),
-`openwebui.homelab.brandadrian.com` (Open WebUI). Die API gibt es nur noch unter `api.oryn.brandadrian.com`.
-Lokal: `ollama.localhost` (API), `openwebui.localhost`.
+Nur noch die oryn-Adressen sind öffentlich, die alten `*.homelab.brandadrian.com`-Adressen sind abgeschaltet.
+Lokal (selbstsigniertes Zertifikat): `ollama.localhost` (API), `openwebui.localhost`, `ollama-monitoring.localhost/monitor`.
 DNS: IONOS-CNAME `*.oryn` → `brandadrian.internet-box.ch`, Zertifikate holt Traefik pro Hostname (Let's Encrypt, HTTP-Challenge).
 
 ## Inhalt
@@ -42,7 +41,7 @@ flowchart LR
         monitor["ollama-monitor/ OllamaMonitor<br/>Windows-Dienst"]
 
         subgraph docker["Docker Desktop · Netz proxy"]
-            traefik["Traefik · HTTPS<br/>(homelab-proxy)"]
+            traefik["Traefik · HTTPS<br/>(oryn-gateway)"]
             subgraph api["api/"]
                 nginx["nginx<br/>prüft API-Key"]
                 meter["meter<br/>misst jede Anfrage"]
@@ -85,7 +84,7 @@ docs/            Detail-Dokumentation
 
 ## Einrichten
 
-Voraussetzungen: Ollama nativ unter Windows, Docker Desktop, laufender [homelab-proxy](https://github.com/brandadrian/homelab-proxy)
+Voraussetzungen: Ollama nativ unter Windows, Docker Desktop, laufender [oryn-gateway](https://github.com/brandadrian/oryn-gateway)
 (Traefik und Docker-Netz `proxy`), IONOS-CNAME `*.oryn` → `brandadrian.internet-box.ch`.
 
 1. **Ollama auf Vulkan** umstellen (mit zwei verschiedenen AMD-Karten stürzt ROCm beim Verteilen eines Modells ab, Details in

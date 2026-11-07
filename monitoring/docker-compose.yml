@@ -68,7 +68,7 @@ services:
       - traefik.http.middlewares.llm-monitor-anon.headers.customrequestheaders.Cookie=
       - traefik.http.middlewares.llm-monitor-to-subpath.redirectregex.regex=^https://([^/]+)/(.*)
       - traefik.http.middlewares.llm-monitor-to-subpath.redirectregex.replacement=https://$${1}/monitor/$${2}
-      # neu: https://monitoring.oryn.brandadrian.com/monitor  (/ leitet dorthin)
+      # https://monitoring.oryn.brandadrian.com/monitor  (/ leitet dorthin)
       - traefik.http.routers.llm-monitor.rule=Host(`monitoring.oryn.brandadrian.com`) && PathPrefix(`/monitor`) && !PathPrefix(`/monitor/login`) && !PathPrefix(`/monitor/logout`) && !PathPrefix(`/monitor/signup`) && !PathPrefix(`/monitor/user`) && !PathPrefix(`/monitor/admin`)
       - traefik.http.routers.llm-monitor.entrypoints=websecure
       - traefik.http.routers.llm-monitor.tls.certresolver=le
@@ -79,18 +79,17 @@ services:
       - traefik.http.routers.llm-monitor-root.tls.certresolver=le
       - traefik.http.routers.llm-monitor-root.service=noop@internal
       - traefik.http.routers.llm-monitor-root.middlewares=llm-monitor-to-subpath
-      # alt (läuft vorerst parallel): https://ollama-monitoring.homelab.brandadrian.com
-      - traefik.http.routers.llm-monitor-old.rule=(Host(`ollama-monitoring.homelab.brandadrian.com`) || Host(`ollama-monitoring.localhost`)) && PathPrefix(`/monitor`) && !PathPrefix(`/monitor/login`) && !PathPrefix(`/monitor/logout`) && !PathPrefix(`/monitor/signup`) && !PathPrefix(`/monitor/user`) && !PathPrefix(`/monitor/admin`)
-      - traefik.http.routers.llm-monitor-old.entrypoints=websecure
-      - traefik.http.routers.llm-monitor-old.tls=true
-      - traefik.http.routers.llm-monitor-old.tls.certresolver=le
-      - traefik.http.routers.llm-monitor-old.service=llm-monitor
-      - traefik.http.routers.llm-monitor-old.middlewares=llm-monitor-anon
-      - traefik.http.routers.llm-monitor-old-root.rule=(Host(`ollama-monitoring.homelab.brandadrian.com`) || Host(`ollama-monitoring.localhost`)) && !PathPrefix(`/monitor`)
-      - traefik.http.routers.llm-monitor-old-root.entrypoints=websecure
-      - traefik.http.routers.llm-monitor-old-root.tls=true
-      - traefik.http.routers.llm-monitor-old-root.service=noop@internal
-      - traefik.http.routers.llm-monitor-old-root.middlewares=llm-monitor-to-subpath
+      # lokal (selbstsigniertes Zertifikat): https://ollama-monitoring.localhost/monitor
+      - traefik.http.routers.llm-monitor-local.rule=Host(`ollama-monitoring.localhost`) && PathPrefix(`/monitor`) && !PathPrefix(`/monitor/login`) && !PathPrefix(`/monitor/logout`) && !PathPrefix(`/monitor/signup`) && !PathPrefix(`/monitor/user`) && !PathPrefix(`/monitor/admin`)
+      - traefik.http.routers.llm-monitor-local.entrypoints=websecure
+      - traefik.http.routers.llm-monitor-local.tls=true
+      - traefik.http.routers.llm-monitor-local.service=llm-monitor
+      - traefik.http.routers.llm-monitor-local.middlewares=llm-monitor-anon
+      - traefik.http.routers.llm-monitor-local-root.rule=Host(`ollama-monitoring.localhost`) && !PathPrefix(`/monitor`)
+      - traefik.http.routers.llm-monitor-local-root.entrypoints=websecure
+      - traefik.http.routers.llm-monitor-local-root.tls=true
+      - traefik.http.routers.llm-monitor-local-root.service=noop@internal
+      - traefik.http.routers.llm-monitor-local-root.middlewares=llm-monitor-to-subpath
     networks:
       - default
       - proxy

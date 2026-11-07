@@ -4,7 +4,7 @@
 
 Chat-Oberfläche für die lokalen Modelle, inklusive Modelle anzeigen, installieren und löschen. Die Modelle laufen in Ollama nativ unter Windows ([Modelle](models.md)).
 
-- Öffentlich: https://chat.oryn.brandadrian.com (alt, läuft parallel: https://openwebui.homelab.brandadrian.com)
+- Öffentlich: https://chat.oryn.brandadrian.com
 - Lokal: https://openwebui.localhost
 
 ```mermaid

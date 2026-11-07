@@ -4,7 +4,7 @@
 
 Direkter Zugriff auf die lokalen Modelle (z.B. aus VS Code, Skripten, anderen Apps), abgesichert mit einem API-Key (GUID). Ollama selbst hat keine Auth, deshalb steht nginx davor und prüft den Key.
 
-- Öffentlich: https://api.oryn.brandadrian.com (`/v1` und `/api`), die alte Adresse `ollama.homelab.brandadrian.com` ist abgeschaltet
+- Öffentlich: https://api.oryn.brandadrian.com (`/v1` und `/api`)
 - Lokal: https://ollama.localhost
 
 ```mermaid
@@ -108,7 +108,7 @@ Logs des Proxys (im Ordner `api/`): `docker compose logs -f meter` (eine Zeile p
 
 ## Routing (Traefik)
 
-Jeder Teil hat eine eigene Subdomain: `api.oryn.brandadrian.com` (API), `monitoring.oryn.brandadrian.com` (Grafana, `/` leitet auf `/monitor`), `chat.oryn.brandadrian.com` (Open WebUI, homelab-proxy).
+Jeder Teil hat eine eigene Subdomain: `api.oryn.brandadrian.com` (API), `monitoring.oryn.brandadrian.com` (Grafana, `/` leitet auf `/monitor`), `chat.oryn.brandadrian.com` (Open WebUI, oryn-gateway).
 Grafanas eigene API liegt unter `/monitor/api` und kollidiert deshalb nicht.
 
 ## Sicherheit

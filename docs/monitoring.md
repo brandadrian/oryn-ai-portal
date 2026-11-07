@@ -33,7 +33,7 @@ Besucher sehen alle Dashboards anonym als Viewer. Traefik sperrt auf den öffent
 Damit kann sich öffentlich niemand anmelden, auch nicht mit Admin-Zugang. Admin-Login nur lokal über http://localhost:3000/monitor.
 
 Grafana läuft unter dem Unterpfad `/monitor` (`GF_SERVER_SERVE_FROM_SUB_PATH`), damit `/v1` und `/api` auf derselben Domain der LLM-API gehören.
-Die alte Adresse `ollama-monitoring.homelab.brandadrian.com` leitet auf `/monitor/...` weiter.
+Lokal: https://ollama-monitoring.localhost/monitor (selbstsigniertes Zertifikat).
 
 ## OllamaMonitor als Windows-Dienst
 

@@ -39,7 +39,7 @@ services:
 volumes:
   data:
     external: true
-    name: openwebui_data   # bestehendes Volume aus dem homelab-proxy (Benutzer, Chats)
+    name: openwebui_data   # bestehendes Volume (Benutzer, Chats), stammt aus dem früheren homelab-proxy
 
 networks:
   proxy:

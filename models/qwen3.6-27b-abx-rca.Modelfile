@@ -1,3 +1,5 @@
+# USE CASE: Incident-Analyse / Root Cause (ES -> Loki -> GitLab) | Variante: genau (empfohlen) | Status: getestet, 40/40 | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
+#
 # Qwen 3.6-27B Q8_0 (dicht) für Incident-Analysen: Elasticsearch -> Loki -> GitLab, Ursache + Fix finden.
 # Gleiche Dateien wie qwen3.6:27b-q8_0, kein zusätzlicher Speicher. Nur andere Parameter.
 # Benchmark incident-lab 2026-11-07 (10 Incidents, C:\github\incident-lab\docs\tuning.md):

@@ -1,8 +1,9 @@
 # Oryn AI Portal
 
-Eigene LLMs von aussen nutzen: **API mit Key**, **eigene Modelle** und **Monitoring** an einem Ort.
-Läuft auf einem Windows-PC mit Ollama (nativ, GPU) und Docker Desktop, erreichbar über Traefik aus dem
-[homelab-proxy](https://github.com/brandadrian/homelab-proxy).
+Eigene LLMs von aussen nutzen: **API mit Key**, **eigene Modelle**, **Chat (Open WebUI)** und **Monitoring** an einem Ort.
+Läuft auf einem Windows-PC mit Ollama (nativ, R9700 32 GB + RX 7800 XT 16 GB) und Docker Desktop. Von aussen erreichbar über den
+Traefik im [homelab-proxy](https://github.com/brandadrian/homelab-proxy): Er liest die Routing-Regeln aus den Labels der Container hier,
+im homelab-proxy selbst steht nichts von oryn.
 
 | Adresse | Was |
 |---------|-----|
@@ -12,7 +13,10 @@ Läuft auf einem Windows-PC mit Ollama (nativ, GPU) und Docker Desktop, erreichb
 | `https://chat.oryn.brandadrian.com` | Open WebUI (`openwebui/`) |
 | `http://localhost:3000/monitor` | Grafana lokal mit Admin-Login |
 
-Alte Adressen laufen vorerst parallel: `ollama.homelab.brandadrian.com` (API), `ollama-monitoring.homelab.brandadrian.com` (leitet auf `/monitor`).
+Alte Adressen laufen vorerst parallel: `ollama-monitoring.homelab.brandadrian.com` (leitet auf `/monitor`),
+`openwebui.homelab.brandadrian.com` (Open WebUI). Die API gibt es nur noch unter `api.oryn.brandadrian.com`.
+Lokal: `ollama.localhost` (API), `openwebui.localhost`.
+DNS: IONOS-CNAME `*.oryn` → `brandadrian.internet-box.ch`, Zertifikate holt Traefik pro Hostname (Let's Encrypt, HTTP-Challenge).
 
 ## Inhalt
 
@@ -84,21 +88,35 @@ docs/            Detail-Dokumentation
 Voraussetzungen: Ollama nativ unter Windows, Docker Desktop, laufender [homelab-proxy](https://github.com/brandadrian/homelab-proxy)
 (Traefik und Docker-Netz `proxy`), IONOS-CNAME `*.oryn` → `brandadrian.internet-box.ch`.
 
-1. **Modelle** anlegen → [docs/models.md](docs/models.md)
-2. **Monitoring** starten (zuerst, die API schreibt nach Loki):
+1. **Ollama auf Vulkan** umstellen (mit zwei verschiedenen AMD-Karten stürzt ROCm beim Verteilen eines Modells ab, Details in
+   [docs/models.md](docs/models.md#backend-rocm-oder-vulkan)), PowerShell:
+
+   ```powershell
+   setx OLLAMA_VULKAN 1
+   ```
+
+   ```powershell
+   setx HIP_VISIBLE_DEVICES -1
+   ```
+
+   Danach Ollama in der Taskleiste beenden und neu starten. Prüfen: in `%LOCALAPPDATA%\Ollama\server.log` stehen zwei Zeilen
+   `inference compute … library=Vulkan` (R9700 und RX 7800 XT).
+
+2. **Modelle** anlegen → [docs/models.md](docs/models.md)
+3. **Monitoring** starten (zuerst, die API schreibt nach Loki):
 
    ```bash
    cd monitoring && docker compose up -d
    ```
 
-3. **API** starten: `api/.env` aus `api/.env.example` erstellen, Key setzen (PowerShell: `[guid]::NewGuid()`), dann
+4. **API** starten: `api/.env` aus `api/.env.example` erstellen, Key setzen (PowerShell: `[guid]::NewGuid()`), dann
 
    ```bash
    cd api && docker compose up -d
    ```
 
-4. **OllamaMonitor als Windows-Dienst** → [docs/monitoring.md](docs/monitoring.md#ollamamonitor-als-windows-dienst)
-5. **Open WebUI** starten: `openwebui/.env` aus `openwebui/.env.example`, dann `cd openwebui && docker compose up -d` → [docs/openwebui.md](docs/openwebui.md)
+5. **OllamaMonitor als Windows-Dienst** → [docs/monitoring.md](docs/monitoring.md#ollamamonitor-als-windows-dienst)
+6. **Open WebUI** starten: `openwebui/.env` aus `openwebui/.env.example`, dann `cd openwebui && docker compose up -d` → [docs/openwebui.md](docs/openwebui.md)
 
 Nach dem ersten `docker compose up` prüfen, ob die Container in beiden Netzen hängen (`docker inspect <name>`).
 Docker Desktop hängt beim ersten Start manchmal nur ein Netz an, dann `docker compose up -d --force-recreate`.

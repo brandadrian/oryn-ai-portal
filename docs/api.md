@@ -4,8 +4,7 @@
 
 Direkter Zugriff auf die lokalen Modelle (z.B. aus VS Code, Skripten, anderen Apps), abgesichert mit einem API-Key (GUID). Ollama selbst hat keine Auth, deshalb steht nginx davor und prüft den Key.
 
-- Öffentlich: https://api.oryn.brandadrian.com (`/v1` und `/api`)
-- Alt, läuft vorerst parallel: https://ollama.homelab.brandadrian.com
+- Öffentlich: https://api.oryn.brandadrian.com (`/v1` und `/api`), die alte Adresse `ollama.homelab.brandadrian.com` ist abgeschaltet
 - Lokal: https://ollama.localhost
 
 ```mermaid

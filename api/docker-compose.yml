@@ -1,7 +1,6 @@
 # LLM-API von aussen: Traefik -> nginx (API-Key) -> meter (Messung) -> Ollama (nativ, GPU)
 # Start (im Ordner api/):  docker compose up -d
-#   https://api.oryn.brandadrian.com/v1  und  /api   (neu)
-#   https://ollama.homelab.brandadrian.com             (alt, läuft vorerst parallel)
+#   https://api.oryn.brandadrian.com/v1  und  /api
 #   https://ollama.localhost                           (lokal testen)
 name: oryn-api
 
@@ -18,16 +17,11 @@ services:
       - traefik.enable=true
       - traefik.docker.network=proxy
       - traefik.http.services.llm-api.loadbalancer.server.port=80
-      # neu: nur /v1 und /api, der Rest der Domain gehört dem Monitoring
+      # nur /v1 und /api
       - traefik.http.routers.llm-api.rule=Host(`api.oryn.brandadrian.com`) && (PathPrefix(`/v1`) || PathPrefix(`/api`))
       - traefik.http.routers.llm-api.entrypoints=websecure
       - traefik.http.routers.llm-api.tls.certresolver=le
       - traefik.http.routers.llm-api.service=llm-api
-      # alt
-      - traefik.http.routers.llm-api-old.rule=Host(`ollama.homelab.brandadrian.com`)
-      - traefik.http.routers.llm-api-old.entrypoints=websecure
-      - traefik.http.routers.llm-api-old.tls.certresolver=le
-      - traefik.http.routers.llm-api-old.service=llm-api
       # lokal (selbstsigniertes Zertifikat)
       - traefik.http.routers.llm-api-local.rule=Host(`ollama.localhost`)
       - traefik.http.routers.llm-api-local.entrypoints=websecure

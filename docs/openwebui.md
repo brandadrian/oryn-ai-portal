@@ -38,7 +38,7 @@ Der Admin wird beim ersten Start aus der `.env` angelegt. So gibt es keinen Mome
 Als Admin unter Admin-Einstellungen → Modelle:
 
 - **Anzeigen:** Liste aller Modelle in Ollama.
-- **Installieren / Löschen:** Das wirkt direkt auf Ollama, also auch auf Saba. Das Modell `saba` nicht löschen.
+- **Installieren / Löschen:** Das wirkt direkt auf Ollama, also auch auf die API und Copilot.
 - **Beschreibung:** Modell bearbeiten → Feld "Beschreibung", z.B. wofür es nützlich ist. Sie liegt nur in Open WebUI und erscheint in der Modellauswahl.
 
 Nach dem Löschen kann das Modell noch kurz in der Liste stehen, weil Open WebUI die Liste zwischenspeichert.
@@ -54,8 +54,8 @@ Zum Einfügen ins Feld "Beschreibung":
 | `gpt-oss:20b` | Sehr schnell, für Chat und schwierige Fragen mit längerem Nachdenken, ohne Bilder. |
 | `qwen3.5:9b` | Schneller Allrounder mit Denkmodus, versteht auch Bilder. |
 | `qwen3-vl:8b-instruct` | Für Bilder und Rechnungen: Inhalte direkt auslesen, ohne Denkmodus. |
-| `saba:latest` | Eigener Chat-Bot Saba mit eigenem Sprachstil, locker und witzig. |
-| `gemma3:27b` | Basis für Saba. Gutes Deutsch, kreativ, versteht auch Bilder. |
+| `qwen3.6:27b-abx-rca` | Fehleranalyse über Elasticsearch, Loki und GitLab: gründlich und genau, ca. 2 Minuten pro Fall. |
+| `qwen3.6:35b-a3b-abx-rca` | Fehleranalyse, schnelle Variante: Antwort in Sekunden, etwas weniger zuverlässig. |
 
 ## Update
 
@@ -67,4 +67,4 @@ Version in `docker-compose.yml` anpassen (bewusst fest, weil Updates die Datenba
 - Installieren und Löschen von Modellen geht nur als Admin.
 - Die Login-Seite ist öffentlich, deshalb ein langes Passwort verwenden.
 - Einstellungen wie `ENABLE_SIGNUP` speichert Open WebUI nach dem ersten Start in der Datenbank. Ab dann gilt, was in den Admin-Einstellungen steht.
-- Ollama selbst ist von aussen nur über Open WebUI und die [LLM-API mit Key](https://github.com/brandadrian/oryn-ai-portal) (Repo oryn-ai-portal) erreichbar.
+- Ollama selbst ist von aussen nur über Open WebUI und die [LLM-API mit Key](api.md) erreichbar.

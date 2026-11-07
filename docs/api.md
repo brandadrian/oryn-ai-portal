@@ -4,7 +4,7 @@
 
 Direkter Zugriff auf die lokalen Modelle (z.B. aus VS Code, Skripten, anderen Apps), abgesichert mit einem API-Key (GUID). Ollama selbst hat keine Auth, deshalb steht nginx davor und prüft den Key.
 
-- Öffentlich: https://api.oryn.brandadrian.com (`/v1` und `/api`)
+- Öffentlich: https://ollama-api.oryn.brandadrian.com (`/v1` und `/api`); `https://api.oryn.brandadrian.com` funktioniert vorerst als Alias
 - Lokal: https://ollama.localhost
 
 ```mermaid
@@ -41,21 +41,21 @@ Key ändern: `.env` anpassen, dann `docker compose up -d --force-recreate`.
 Header `Authorization: Bearer <Key>` mitschicken.
 
 ```bash
-curl https://api.oryn.brandadrian.com/api/tags -H "Authorization: Bearer <Key>"
+curl https://ollama-api.oryn.brandadrian.com/api/tags -H "Authorization: Bearer <Key>"
 
-curl https://api.oryn.brandadrian.com/api/chat -H "Authorization: Bearer <Key>" \
+curl https://ollama-api.oryn.brandadrian.com/api/chat -H "Authorization: Bearer <Key>" \
   -d '{"model":"gpt-oss:20b","messages":[{"role":"user","content":"Hallo"}]}'
 ```
 
 PowerShell (`curl` ist dort ein Alias für `Invoke-WebRequest`, deshalb `curl.exe` oder):
 
 ```powershell
-Invoke-RestMethod https://api.oryn.brandadrian.com/api/tags -Headers @{ Authorization = "Bearer <Key>" }
+Invoke-RestMethod https://ollama-api.oryn.brandadrian.com/api/tags -Headers @{ Authorization = "Bearer <Key>" }
 ```
 
-OpenAI-kompatible Clients: Base-URL `https://api.oryn.brandadrian.com/v1`, API-Key = der Key.
+OpenAI-kompatible Clients: Base-URL `https://ollama-api.oryn.brandadrian.com/v1`, API-Key = der Key.
 
-GitHub Copilot (VS Code): Chat: Manage Language Models → OpenAI Compatible → Base-URL `https://api.oryn.brandadrian.com/v1`, API-Key, Modell-ID (z.B. `qwen3.8:27b-agent`).
+GitHub Copilot (VS Code): Chat: Manage Language Models → OpenAI Compatible → Base-URL `https://ollama-api.oryn.brandadrian.com/v1`, API-Key, Modell-ID (z.B. `qwen3.8:27b-agent`).
 
 ## Modelle
 
@@ -108,7 +108,7 @@ Logs des Proxys (im Ordner `api/`): `docker compose logs -f meter` (eine Zeile p
 
 ## Routing (Traefik)
 
-Jeder Teil hat eine eigene Subdomain: `api.oryn.brandadrian.com` (API), `monitoring.oryn.brandadrian.com` (Grafana, `/` leitet auf `/monitor`), `chat.oryn.brandadrian.com` (Open WebUI, oryn-gateway).
+Jeder Teil hat eine eigene Subdomain: `ollama-api.oryn.brandadrian.com` (API, Alias `api.oryn.brandadrian.com`), `monitoring.oryn.brandadrian.com` (Grafana, `/` leitet auf `/monitor`), `chat.oryn.brandadrian.com` (Open WebUI, oryn-gateway).
 Grafanas eigene API liegt unter `/monitor/api` und kollidiert deshalb nicht.
 
 ## Sicherheit

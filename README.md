@@ -7,8 +7,8 @@ im oryn-gateway selbst stehen keine Regeln für diese Dienste.
 
 | Adresse | Was |
 |---------|-----|
-| `https://api.oryn.brandadrian.com/v1` | OpenAI-kompatible API (Copilot, SDKs), Bearer-Key nötig |
-| `https://api.oryn.brandadrian.com/api` | Ollama-API, Bearer-Key nötig |
+| `https://ollama-api.oryn.brandadrian.com/v1` | OpenAI-kompatible API (Copilot, SDKs), Bearer-Key nötig |
+| `https://ollama-api.oryn.brandadrian.com/api` | Ollama-API, Bearer-Key nötig (Alias: `api.oryn.brandadrian.com`) |
 | `https://monitoring.oryn.brandadrian.com/monitor` | Grafana, öffentlich nur lesen (`/` leitet hierhin) |
 | `https://chat.oryn.brandadrian.com` | Open WebUI (`openwebui/`) |
 | `http://localhost:3000/monitor` | Grafana lokal mit Admin-Login |

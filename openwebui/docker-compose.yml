@@ -1,6 +1,6 @@
 # Open WebUI: Chat und Modellverwaltung mit Login (Ollama nativ auf dem PC).
 # Start (im Ordner openwebui/):  docker compose up -d
-#   https://chat.oryn.brandadrian.com  (neu)   https://openwebui.homelab.brandadrian.com  (alt)   https://openwebui.localhost
+#   https://chat.oryn.brandadrian.com   https://openwebui.localhost (lokal)
 # Projektname fest auf "openwebui": nutzt weiter das bestehende Volume openwebui_data (Benutzer, Chats).
 name: openwebui
 
@@ -11,8 +11,8 @@ services:
     env_file: .env
     environment:
       - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - WEBUI_URL=https://openwebui.homelab.brandadrian.com
-      - CORS_ALLOW_ORIGIN=https://openwebui.homelab.brandadrian.com;https://chat.oryn.brandadrian.com;https://openwebui.localhost
+      - WEBUI_URL=https://chat.oryn.brandadrian.com
+      - CORS_ALLOW_ORIGIN=https://chat.oryn.brandadrian.com;https://openwebui.localhost
       # öffentlich erreichbar: Login an, keine Selbstregistrierung
       - WEBUI_AUTH=true
       - ENABLE_SIGNUP=false
@@ -22,11 +22,7 @@ services:
       - host.docker.internal:host-gateway
     labels:
       - traefik.enable=true
-      - traefik.http.routers.openwebui.rule=Host(`openwebui.homelab.brandadrian.com`)
-      - traefik.http.routers.openwebui.entrypoints=websecure
-      - traefik.http.routers.openwebui.tls.certresolver=le
-      - traefik.http.routers.openwebui.service=openwebui
-      # neu: https://chat.oryn.brandadrian.com (gleiche Instanz)
+      # https://chat.oryn.brandadrian.com
       - traefik.http.routers.openwebui-chat.rule=Host(`chat.oryn.brandadrian.com`)
       - traefik.http.routers.openwebui-chat.entrypoints=websecure
       - traefik.http.routers.openwebui-chat.tls.certresolver=le

@@ -1,0 +1,39 @@
+# Nur Anfragen mit "Authorization: Bearer <OLLAMA_API_KEY>" kommen durch
+map $http_authorization $ollama_auth_ok {
+    "Bearer ${OLLAMA_API_KEY}" 1;
+    default                    0;
+}
+
+server {
+    listen 80;
+
+    # Bilder (base64) können gross sein
+    client_max_body_size 50m;
+    client_body_buffer_size 16m;   # Copilot schickt grosse Kontexte, sonst Warnung "buffered to a temporary file"
+
+    # Nur Abfragen und Inferenz. Kein pull, push, create, copy, delete.
+    # Ollama-API und OpenAI-kompatible API (/v1)
+    location ~ ^/(api/(chat|generate|embed|embeddings|tags|show|ps|version)|v1/(chat/completions|completions|embeddings|models(/.*)?))$ {
+        if ($ollama_auth_ok = 0) {
+            add_header WWW-Authenticate 'Bearer' always;
+            return 401;
+        }
+
+        proxy_pass http://meter:8080;            # Mess-Proxy, reicht an Ollama weiter
+        proxy_set_header Host localhost;
+        proxy_set_header Origin "";          # Ollama blockt fremde Origins
+        proxy_set_header Authorization "";   # Key nicht an Ollama weitergeben
+        proxy_http_version 1.1;
+        proxy_buffering off;                 # Antwort live streamen
+        proxy_read_timeout 600s;             # grosse Modelle laden lange
+    }
+
+    # Manche Clients (z.B. GitHub Copilot) hängen /api statt /v1 an die Base-URL
+    location ~ ^/api/(models(/.*)?|chat/completions|completions)$ {
+        rewrite ^/api/(.*)$ /v1/$1 last;
+    }
+
+    location / {
+        return 404;
+    }
+}

@@ -1,0 +1,50 @@
+# Open WebUI: Chat und Modellverwaltung mit Login (Ollama nativ auf dem PC).
+# Start (im Ordner openwebui/):  docker compose up -d
+#   https://chat.oryn.brandadrian.com  (neu)   https://openwebui.homelab.brandadrian.com  (alt)   https://openwebui.localhost
+# Projektname fest auf "openwebui": nutzt weiter das bestehende Volume openwebui_data (Benutzer, Chats).
+name: openwebui
+
+services:
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:v0.12.5
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_URL=https://openwebui.homelab.brandadrian.com
+      - CORS_ALLOW_ORIGIN=https://openwebui.homelab.brandadrian.com;https://chat.oryn.brandadrian.com;https://openwebui.localhost
+      # öffentlich erreichbar: Login an, keine Selbstregistrierung
+      - WEBUI_AUTH=true
+      - ENABLE_SIGNUP=false
+    volumes:
+      - data:/app/backend/data
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.openwebui.rule=Host(`openwebui.homelab.brandadrian.com`)
+      - traefik.http.routers.openwebui.entrypoints=websecure
+      - traefik.http.routers.openwebui.tls.certresolver=le
+      - traefik.http.routers.openwebui.service=openwebui
+      # neu: https://chat.oryn.brandadrian.com (gleiche Instanz)
+      - traefik.http.routers.openwebui-chat.rule=Host(`chat.oryn.brandadrian.com`)
+      - traefik.http.routers.openwebui-chat.entrypoints=websecure
+      - traefik.http.routers.openwebui-chat.tls.certresolver=le
+      - traefik.http.routers.openwebui-chat.service=openwebui
+      # lokal testen: https://openwebui.localhost (selbstsigniertes Zertifikat, kein Let's Encrypt)
+      - traefik.http.routers.openwebui-local.rule=Host(`openwebui.localhost`)
+      - traefik.http.routers.openwebui-local.entrypoints=websecure
+      - traefik.http.routers.openwebui-local.tls=true
+      - traefik.http.routers.openwebui-local.service=openwebui
+      - traefik.http.services.openwebui.loadbalancer.server.port=8080
+    networks:
+      - proxy
+
+volumes:
+  data:
+    external: true
+    name: openwebui_data   # bestehendes Volume aus dem homelab-proxy (Benutzer, Chats)
+
+networks:
+  proxy:
+    external: true

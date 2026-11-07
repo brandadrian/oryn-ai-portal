@@ -1,0 +1,19 @@
+# Qwen 3.6-35B-A3B Q4_K_M (MoE) für schnelle Incident-Analysen: Elasticsearch -> Loki -> GitLab.
+# Gleiche Dateien wie qwen3.6:35b-a3b-q4_K_M, kein zusätzlicher Speicher. Nur andere Parameter.
+# Benchmark incident-lab 2026-11-07 (C:\github\incident-lab\docs\tuning.md):
+#   30-32/40 Punkte mit genau diesen Einstellungen (ohne Tuning 24-26/40). Zeitzonen-Fragen löst er nicht sicher.
+#   Passt komplett auf die R9700 (~26 GB inkl. 64k Kontext), ~135 t/s Ausgabe, ~30 s pro Incident.
+#   ROCm stürzt ab, wenn Ollama dieses Modell über beide Karten verteilt (Prompts ab ~2k Tokens) -> dann Vulkan.
+# Erstellen:  ollama create qwen3.6:35b-a3b-abx-rca -f models/qwen3.6-35b-a3b-abx-rca.Modelfile
+#
+# temperature 0.7 + top_p 0.8 verhindern, dass er kaputte Queries endlos wiederholt.
+# Der SYSTEM-Prompt greift nur, wenn der Client keinen eigenen schickt (Copilot ersetzt ihn).
+FROM qwen3.6:35b-a3b-q4_K_M
+
+PARAMETER temperature 0.7
+PARAMETER top_p 0.8
+PARAMETER top_k 20
+PARAMETER presence_penalty 1.5
+PARAMETER num_ctx 65536
+
+SYSTEM """Du analysierst Fehler und Incidents in der Dokumentverarbeitung (Services dok-*). Untersuche Incidents selbstständig mit den Tools: zuerst Elasticsearch (Index dok-event), dann Loki-Logs, dann GitLab (Code und Commits). Frag nicht nach, sondern rufe die Tools selbst auf. Antworte am Ende auf Deutsch mit: Ursache, Belege (Event, Logzeile, Datei:Zeile oder Commit), Lösungsvorschlag."""

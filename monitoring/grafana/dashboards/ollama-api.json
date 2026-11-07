@@ -1,0 +1,790 @@
+{
+  "uid": "ollama-api",
+  "title": "Ollama API (Anfragen)",
+  "tags": [
+    "ollama"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "editable": true,
+  "description": "Anfragen über ollama.homelab.brandadrian.com (Mess-Proxy im homelab-proxy/ollama-api). Daten aus Loki, job=\"ollama-api\".",
+  "templating": {
+    "list": [
+      {
+        "name": "client",
+        "label": "Client",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki-local"
+        },
+        "query": {
+          "label": "client",
+          "refId": "A",
+          "stream": "{job=\"ollama-api\"}",
+          "type": 1
+        },
+        "definition": "label_values({job=\"ollama-api\"}, client)",
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "refresh": 2
+      },
+      {
+        "name": "model",
+        "label": "Modell",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki-local"
+        },
+        "query": {
+          "label": "model",
+          "refId": "A",
+          "stream": "{job=\"ollama-api\"}",
+          "type": 1
+        },
+        "definition": "label_values({job=\"ollama-api\"}, model)",
+        "includeAll": true,
+        "multi": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "refresh": 2
+      }
+    ]
+  },
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "ollama"
+      ],
+      "asDropdown": false,
+      "title": "Dashboards",
+      "includeVars": false,
+      "keepTime": true
+    }
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Überblick",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 2,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Anfragen",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 3,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Prompt-Tokens",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tokens != \"\" | unwrap prompt_tokens [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 4,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Ausgabe-Tokens",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | output_tokens != \"\" | unwrap output_tokens [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 5,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Cache-Treffer",
+      "description": "Anteil der Prompt-Tokens, die Ollama aus dem Cache nehmen konnte. Niedrig = Client schickt den Kontext jedes Mal verändert.",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | cached_tokens != \"\" | unwrap cached_tokens [$__range])) / sum (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tokens != \"\" | unwrap prompt_tokens [$__range])) * 100",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 40
+              },
+              {
+                "color": "green",
+                "value": 70
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Ø Dauer",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | unwrap duration_ms [$__range])) / 1000",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none"
+      }
+    },
+    {
+      "id": 7,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "stat",
+      "title": "Fehler / Abbrüche",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | status >= 400 [$__range])) or vector(0)",
+          "queryType": "instant"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      }
+    },
+    {
+      "type": "row",
+      "title": "Tokens",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 8,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 9,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "timeseries",
+      "title": "Tokens pro Client",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (client) (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tokens != \"\" | unwrap prompt_tokens [$__auto]))",
+          "legendFormat": "{{client}} Prompt"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (client) (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | output_tokens != \"\" | unwrap output_tokens [$__auto]))",
+          "legendFormat": "{{client}} Ausgabe"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "barchart",
+      "title": "Tokens nach Modell (Zeitraum)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (model) (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tokens != \"\" | unwrap prompt_tokens [$__range]))",
+          "legendFormat": "{{model}}",
+          "queryType": "instant",
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (model) (sum_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | output_tokens != \"\" | unwrap output_tokens [$__range]))",
+          "legendFormat": "{{model}}",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "model",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true
+            },
+            "renameByName": {
+              "Value #A": "Prompt",
+              "Value #B": "Ausgabe"
+            }
+          }
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "stacking": "normal",
+        "xField": "model",
+        "showValue": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Optimierung",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 11,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 12,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "timeseries",
+      "title": "Prompt-Grösse und Cache",
+      "description": "Grosse Prompts mit wenig Cache-Anteil kosten am meisten Zeit.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 15
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max(max_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tokens != \"\" | unwrap prompt_tokens [$__auto]))",
+          "legendFormat": "Prompt-Tokens (max)"
+        },
+        {
+          "refId": "B",
+          "expr": "max(max_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | cached_tokens != \"\" | unwrap cached_tokens [$__auto]))",
+          "legendFormat": "davon Cache (max)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "points",
+            "pointSize": 6
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "timeseries",
+      "title": "Zeit pro Anfrage",
+      "description": "Warten = Zeit in der Warteschlange/Modell laden. Prompt = Kontext einlesen. Ausgabe = Antwort generieren.",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 15
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg(avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | wait_ms != \"\" | unwrap wait_ms [$__auto])) / 1000",
+          "legendFormat": "Warten"
+        },
+        {
+          "refId": "B",
+          "expr": "avg(avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_ms != \"\" | unwrap prompt_ms [$__auto])) / 1000",
+          "legendFormat": "Prompt"
+        },
+        {
+          "refId": "C",
+          "expr": "avg(avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | output_ms != \"\" | unwrap output_ms [$__auto])) / 1000",
+          "legendFormat": "Ausgabe"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 14,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "timeseries",
+      "title": "Geschwindigkeit (Tokens/s)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 15
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (model) (avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | output_tps != \"\" | unwrap output_tps [$__auto]))",
+          "legendFormat": "{{model}} Ausgabe"
+        },
+        {
+          "refId": "B",
+          "expr": "avg by (model) (avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | prompt_tps != \"\" | unwrap prompt_tps [$__auto]))",
+          "legendFormat": "{{model}} Prompt"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "points",
+            "pointSize": 6
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Anfragen",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 15,
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 16,
+      "datasource": {
+        "type": "loki",
+        "uid": "loki-local"
+      },
+      "type": "table",
+      "title": "Letzte Anfragen",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"ollama-api\", client=~\"$client\", model=~\"$model\"}",
+          "queryType": "range",
+          "maxLines": 200
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "Line",
+            "format": "json",
+            "replace": true,
+            "keepTime": true
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Time": 0,
+              "client": 1,
+              "model": 2,
+              "endpoint": 3,
+              "status": 4,
+              "prompt_tokens": 5,
+              "cached_tokens": 6,
+              "cache_pct": 7,
+              "output_tokens": 8,
+              "wait_ms": 9,
+              "prompt_ms": 10,
+              "output_ms": 11,
+              "duration_ms": 12,
+              "output_tps": 13,
+              "messages": 14,
+              "tools": 15,
+              "done_reason": 16,
+              "ip": 17
+            },
+            "excludeByName": {
+              "ts": true,
+              "user_agent": true,
+              "request_bytes": true,
+              "response_bytes": true,
+              "stream": true,
+              "first_byte_ms": true,
+              "load_ms": true,
+              "ollama_ms": true,
+              "prompt_tps": true,
+              "num_ctx": true
+            },
+            "renameByName": {
+              "Time": "Zeit",
+              "client": "Client",
+              "model": "Modell",
+              "endpoint": "Endpunkt",
+              "status": "Status",
+              "prompt_tokens": "Prompt",
+              "cached_tokens": "Cache",
+              "cache_pct": "Cache %",
+              "output_tokens": "Ausgabe",
+              "wait_ms": "Warten ms",
+              "prompt_ms": "Prompt ms",
+              "output_ms": "Ausgabe ms",
+              "duration_ms": "Dauer ms",
+              "output_tps": "Tok/s",
+              "messages": "Nachrichten",
+              "tools": "Tools",
+              "done_reason": "Ende",
+              "ip": "IP"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Zeit",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cache %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 40
+                    },
+                    {
+                      "color": "green",
+                      "value": 70
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Dauer ms"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 20000
+                    },
+                    {
+                      "color": "red",
+                      "value": 60000
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

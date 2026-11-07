@@ -1,0 +1,58 @@
+# LLM-API von aussen: Traefik -> nginx (API-Key) -> meter (Messung) -> Ollama (nativ, GPU)
+# Start (im Ordner api/):  docker compose up -d
+#   https://api.oryn.brandadrian.com/v1  und  /api   (neu)
+#   https://ollama.homelab.brandadrian.com             (alt, läuft vorerst parallel)
+#   https://ollama.localhost                           (lokal testen)
+name: oryn-api
+
+services:
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # nginx ersetzt ${OLLAMA_API_KEY} beim Start und schreibt nach conf.d/default.conf
+      - ./templates:/etc/nginx/templates:ro
+    depends_on: [meter]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.services.llm-api.loadbalancer.server.port=80
+      # neu: nur /v1 und /api, der Rest der Domain gehört dem Monitoring
+      - traefik.http.routers.llm-api.rule=Host(`api.oryn.brandadrian.com`) && (PathPrefix(`/v1`) || PathPrefix(`/api`))
+      - traefik.http.routers.llm-api.entrypoints=websecure
+      - traefik.http.routers.llm-api.tls.certresolver=le
+      - traefik.http.routers.llm-api.service=llm-api
+      # alt
+      - traefik.http.routers.llm-api-old.rule=Host(`ollama.homelab.brandadrian.com`)
+      - traefik.http.routers.llm-api-old.entrypoints=websecure
+      - traefik.http.routers.llm-api-old.tls.certresolver=le
+      - traefik.http.routers.llm-api-old.service=llm-api
+      # lokal (selbstsigniertes Zertifikat)
+      - traefik.http.routers.llm-api-local.rule=Host(`ollama.localhost`)
+      - traefik.http.routers.llm-api-local.entrypoints=websecure
+      - traefik.http.routers.llm-api-local.tls=true
+      - traefik.http.routers.llm-api-local.service=llm-api
+    networks:
+      - proxy
+      - default
+
+  # Mess-Proxy: schreibt pro Anfrage Client, Modell, Tokens und Zeiten nach Loki (monitoring/).
+  # Keine Traefik-Labels, nur intern erreichbar.
+  meter:
+    image: node:22-alpine
+    restart: unless-stopped
+    command: ["node", "/app/server.mjs"]
+    volumes:
+      - ./meter:/app:ro
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - LOKI_URL=http://host.docker.internal:3100
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - default
+
+networks:
+  proxy:
+    external: true

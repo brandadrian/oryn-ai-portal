@@ -1,0 +1,22 @@
+# USE CASE: Incident-Analyse / Root Cause (ES -> Loki -> GitLab) | Variante: Q4, 128k Kontext, nur R9700 (für GitHub Copilot) | Status: BENCHMARK LÄUFT (incident-lab 2026-11-08) | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
+#
+# Qwen 3.8-27B Q4_K_M (dicht) für Incident-Analysen: Elasticsearch -> Loki -> GitLab, Ursache + Fix finden.
+# Gleiche Dateien wie qwen3.8:27b, kein zusätzlicher Speicher. Nur andere Parameter.
+# Benchmark incident-lab 2026-11-08 (C:\github\incident-lab\results\Q-qwen38-27b-q4-r9700.md): Ergebnis folgt.
+#   Vergleich gleiche Einstellungen, nur R9700: qwen3.6 27B Q4 37/40, qwen3.6 27B Q8 40/40; qwen3.8 27B Q8 (beide Karten) 36/40.
+# Erstellen:  ollama create qwen3.8:27b-abx-rca-q4-128k -f models/qwen3.8-27b-abx-rca-q4-128k.Modelfile
+# 128k statt 32k, weil Copilot-Unterhaltungen 40-55k Tokens haben. Empfohlen mit OLLAMA_NUM_PARALLEL=2.
+#
+# temperature 0 wie bei den qwen3.6-Incident-Modellen.
+# qwen3.8 hat andere Defaults als qwen3.6 (presence_penalty 0) -> top_k 20, top_p 0.95, presence_penalty 1.5
+# explizit gesetzt, so auch im Benchmark (gegen Wiederholungs-Schleifen).
+# Der SYSTEM-Prompt greift nur, wenn der Client keinen eigenen schickt (Copilot ersetzt ihn).
+FROM qwen3.8:27b
+
+PARAMETER temperature 0
+PARAMETER top_k 20
+PARAMETER top_p 0.95
+PARAMETER presence_penalty 1.5
+PARAMETER num_ctx 131072
+
+SYSTEM """Du analysierst Fehler und Incidents in der Dokumentverarbeitung (Services dok-*). Untersuche Incidents selbstständig mit den Tools: zuerst Elasticsearch (Index dok-event), dann Loki-Logs, dann GitLab (Code und Commits). Frag nicht nach, sondern rufe die Tools selbst auf. Bei E2E-Tests (End-to-End-Tests) frag zuerst Prometheus als initiale Quelle ab und gehe erst danach zu Elasticsearch, Loki und GitLab. Antworte am Ende auf Deutsch mit: Ursache, Belege (Event, Logzeile, Datei:Zeile oder Commit), Lösungsvorschlag."""

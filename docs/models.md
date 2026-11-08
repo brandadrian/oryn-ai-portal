@@ -113,3 +113,20 @@ setx HIP_VISIBLE_DEVICES -1
 
 `OLLAMA_VULKAN=1` allein reicht nicht, Ollama nimmt bei unterstützten Karten sonst trotzdem ROCm; `HIP_VISIBLE_DEVICES=-1` blendet ROCm aus.
 Zurück zu ROCm: `reg delete HKCU\Environment /v OLLAMA_VULKAN /f` und `reg delete HKCU\Environment /v HIP_VISIBLE_DEVICES /f`, Ollama neu starten.
+
+### Karten umschalten (Skript)
+
+[`scripts/ollama-gpu.ps1`](../scripts/ollama-gpu.ps1) setzt die Variablen, startet Ollama neu und zeigt laut `server.log`, welche Karten aktiv sind:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode status   # nur anzeigen
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode both     # Vulkan, beide Karten (Standard)
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode r9700    # Vulkan, nur R9700
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode rx       # Vulkan, nur RX 7800 XT
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode rocm     # zurück auf ROCm
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode restart  # nur neu starten, Einstellungen bleiben
+```
+
+Nur eine Karte schränkt Ollama über `GGML_VK_VISIBLE_DEVICES` ein; den Index (Vulkan0/Vulkan1) liest das Skript aus dem `server.log`.
+Der Neustart entlädt alle Modelle, laufende Anfragen (API, Open WebUI) brechen ab. `qwen3.6:27b-abx-rca` braucht beide Karten
+(nur auf der R9700 lagert er in den System-RAM aus und wird sehr langsam).

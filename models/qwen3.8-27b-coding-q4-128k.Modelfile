@@ -1,0 +1,18 @@
+# USE CASE: Coding (Copilot Agent-Modus, Open WebUI) | Variante: Q4, 128k Kontext, nur R9700, OHNE System-Prompt | Status: GETESTET 10/10 (coding-lab 2026-11-08) | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
+#
+# Qwen 3.8-27B Q4_K_M (dicht) für Programmieren: Code lesen, ändern, Tests ausführen.
+# Gleiche Dateien wie qwen3.8:27b, kein zusätzlicher Speicher. Nur andere Parameter.
+# Benchmark coding-lab 2026-11-08 (C:\github\coding-lab, 10 Node-Aufgaben, Agent mit Datei-/Test-Tools, versteckte Tests):
+#   temp 0: 10/10 gelöst, 46/46 Tests, 59 Tool-Calls, 2.4 min (schnellste Variante)
+#   temp 0.7/top_p 0.8: ebenfalls 10/10, aber 72 Calls, 3.2 min (einmal 23 Calls für einen Zwei-Datei-Bug)
+#   Vergleich qwen3.6 27B Q4 temp 0: 9/10, 3.8 min
+#   Die Aufgaben waren für qwen3.8 zu leicht, um Feinheiten zu unterscheiden.
+# Erstellen:  ollama create qwen3.8:27b-coding-q4-128k -f models/qwen3.8-27b-coding-q4-128k.Modelfile
+#
+# Bewusst KEIN SYSTEM-Prompt: Copilot und Editoren schicken eigene Anweisungen.
+# Multi-Token-Prediction (draft_num_predict 4) kommt vom Basismodell und bleibt aktiv (~2x schneller beim Schreiben).
+# top_k 20 / top_p 0.95 / presence_penalty 0 = Defaults von qwen3.8.
+FROM qwen3.8:27b
+
+PARAMETER temperature 0
+PARAMETER num_ctx 131072

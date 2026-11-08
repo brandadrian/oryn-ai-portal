@@ -1,0 +1,21 @@
+# USE CASE: Recherche mit Websuche (Open WebUI, Brave Search) | Variante: Q4, 128k Kontext, nur R9700 | Status: KURZTEST OK (2026-11-08) | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
+#
+# Qwen 3.8-27B Q4_K_M für Recherchefragen: sucht selbstständig (mehrere Suchen), liest Seiten, antwortet mit Quellen.
+# Gleiche Dateien wie qwen3.8:27b, kein zusätzlicher Speicher. Nur andere Parameter.
+# Kurztest 2026-11-08 (C:\github\coding-lab\research-test.mjs, 4 Fragen, Brave Search + Seitenabruf):
+#   alle 4 sinnvoll beantwortet, 1-3 Suchen pro Frage, 3-6 Quellen-Links, 12-41 s pro Frage.
+#   Denkmodus an: 105 s gesamt, aus: 91 s, Qualität ähnlich. In Open WebUI ist Denken per Schalter wählbar.
+# Erstellen:  ollama create qwen3.8:27b-research-q4-128k -f models/qwen3.8-27b-research-q4-128k.Modelfile
+#
+# 128k Kontext wie die Incident- und Coding-Variante: alle drei teilen sich ein geladenes Modell (kein Neuladen beim Wechsel). temp 0.6 / top_p 0.95 / top_k 20 = Qwen-Empfehlung für
+# Antworten mit Denken, presence_penalty 1.5 gegen Wiederholungen. MTP (draft_num_predict 4) bleibt vom Basismodell aktiv.
+# Open WebUI überschreibt den SYSTEM-Prompt mit einer Version inkl. {{CURRENT_DATE}} (Datum ist für aktuelle Fragen wichtig).
+FROM qwen3.8:27b
+
+PARAMETER temperature 0.6
+PARAMETER top_p 0.95
+PARAMETER top_k 20
+PARAMETER presence_penalty 1.5
+PARAMETER num_ctx 131072
+
+SYSTEM """Du bist ein Recherche-Assistent. Nutze die Websuche für alles, was aktuell sein könnte oder was du nicht sicher weisst, auch mehrmals mit verschiedenen Suchbegriffen. Antworte auf Deutsch, knapp und sachlich, und belege jede wichtige Aussage mit der Quelle als Markdown-Link. Wenn Quellen sich widersprechen oder nichts Verlässliches zu finden ist, sag das."""

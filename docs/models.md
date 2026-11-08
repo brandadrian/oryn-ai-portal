@@ -7,58 +7,82 @@ Namenskonvention: `familie:grösse-zweck`, z.B. `qwen3.8:27b-agent` (Basis erken
 
 ## Installiert
 
-GPUs: AMD Radeon AI PRO R9700 (32 GB) + RX 7800 XT (16 GB), zusammen 48 GB. Modelle, die auf eine Karte passen, legt Ollama
-ganz auf eine Karte; grössere (z.B. 27B Q8) verteilt es auf beide. Messungen 2026-11-05 (nur R9700) bzw. 2026-11-07, alle Modelle 100 % auf der GPU.
+GPUs: AMD Radeon AI PRO R9700 (32 GB) + RX 7800 XT (16 GB). Ollama nutzt zurzeit **nur die R9700** (`GGML_VK_VISIBLE_DEVICES=1`),
+die 7800 XT treibt den Monitor. Stand 2026-11-08, Benchmarks: incident-lab (`C:githubincident-labdocs	uning.md`) und
+coding-lab (`C:githubcoding-labREADME.md`).
 
 ### Nach Use Case
 
 Jedes Modelfile hat in der ersten Zeile `# USE CASE: … | Variante: … | Status: …`.
 
-| Use Case | Modell | Variante | Getestet | Prompt / Ausgabe | VRAM |
+| Use Case | Modell | Einstellungen | Getestet | Ausgabe | VRAM |
 |---|---|---|---|---|---|
-| **Incident-Analyse / Root Cause** (ES → Loki → GitLab) | `qwen3.6:27b-abx-rca` · [Modelfile](../models/qwen3.6-27b-abx-rca.Modelfile) | genau (empfohlen): temperature 0, 32k, beide Karten, **Vulkan** | ✅ incident-lab 40/40 | ~1000 / 19 t/s | 33 GB |
-| | `qwen3.6:35b-a3b-abx-rca` · [Modelfile](../models/qwen3.6-35b-a3b-abx-rca.Modelfile) | schnell: temperature 0.7, top_p 0.8, 64k, nur R9700, **Vulkan** | ✅ incident-lab 30–32/40 | ~3300 / 135 t/s | 26 GB |
-| **Allgemeiner Agent / Copilot** (Tool-Calls) | `qwen3.8:27b-agent` · [Modelfile](../models/qwen3.8-27b-agent.Modelfile) | Standard (Q4): temperature 0.3, 128k | Test 05.11. (nicht im incident-lab) | 656 / 40 t/s | 18 GB |
-| | `qwen3.8:27b-agent-q6` · [Modelfile](../models/qwen3.8-27b-agent-q6.Modelfile) | genau (Q6_K_XL), langsamer | Test 05.11. | 621 / 21 t/s | 30 GB |
-| **Coding** | *noch offen* (`qwen3.8:27b` vorerst) | – | – | 1000 / 41 t/s | 18 GB |
-| **Chat** | `gpt-oss:20b` | schnell, schwierige Fragen | nur Tempo | 3600 / 102 t/s | 13 GB |
-| | `qwen3.5:9b` | klein, versteht Bilder | nur Tempo | 3550 / 79 t/s | 8,6 GB |
-| **Bilder / Rechnungen** | `qwen3-vl:8b-instruct` | Inhalte auslesen | – | | 6 GB |
+| **Incident-Analyse** (ES → Loki → GitLab, Copilot) | `qwen3.8:27b-abx-rca-q4-128k` · [Modelfile](../models/qwen3.8-27b-abx-rca-q4-128k.Modelfile) | **empfohlen**: temp 0, 128k, Incident-Prompt | ✅ 39/40 | ~57 t/s | 19 GB |
+| | `qwen3.6:27b-abx-rca-q4-128k` · [Modelfile](../models/qwen3.6-27b-abx-rca-q4-128k.Modelfile) | temp 0, 128k | ✅ 37/40 | ~32 t/s | 23 GB |
+| | `qwen3.6:27b-abx-rca` · [Modelfile](../models/qwen3.6-27b-abx-rca.Modelfile) | Q8, 32k (passt allein auf R9700) | ✅ 40/40 | ~16 t/s | 29 GB |
+| | `qwen3.6:27b-abx-rca-128k` · [Modelfile](../models/qwen3.6-27b-abx-rca-128k.Modelfile) | Q8, 128k, nur mit beiden Karten | (40/40 bei 32k) | ~18 t/s | 39 GB |
+| | `qwen3.6:35b-a3b-abx-rca` · [Modelfile](../models/qwen3.6-35b-a3b-abx-rca.Modelfile) | schnell (MoE), temp 0.7, 64k | ✅ 30–32/40 | ~135 t/s | 26 GB |
+| **Coding** | `qwen3.8:27b-coding-q4-128k` · [Modelfile](../models/qwen3.8-27b-coding-q4-128k.Modelfile) | temp 0, 128k, **ohne System-Prompt** | ✅ 10/10 | ~57 t/s | 19 GB |
+| **Recherche mit Websuche** | `qwen3.8:27b-research-q4-128k` · [Modelfile](../models/qwen3.8-27b-research-q4-128k.Modelfile) | temp 0.6, 128k, Recherche-Prompt; in Open WebUI Websuche an (Brave, 6 Treffer) | ✅ Kurztest 4/4 | ~57 t/s | 19 GB |
+| **Allgemeiner Agent** | `qwen3.8:27b-agent` · [Modelfile](../models/qwen3.8-27b-agent.Modelfile) | temp 0.3, 128k | Test 05.11. | ~57 t/s | 19 GB |
+| **Dokumente / Rechnungen** | `qwen3-vl:32b-instruct` | Bilder/PDF-Seiten auslesen, mit `num_ctx` 16–32k anfragen | – | | 21 GB |
+| | `qwen3-vl:8b-instruct` | einfache Belege, schnell | – | | 6 GB |
+| **Chat** | `gpt-oss:20b` | schnell, schwierige Fragen | nur Tempo | ~102 t/s | 13 GB |
+| | `qwen3.5:9b` | klein, versteht Bilder | nur Tempo | ~79 t/s | 8,6 GB |
 
-Die zwei `-abx-rca`-Modelle (MCP-Agent für ES → Loki → GitLab) sind mit dem incident-lab (`C:\github\incident-lab`, Ergebnisse in `docs/tuning.md`, 21 Läufe am 2026-11-07)
-abgestimmt. Wichtiger als die Parameter: nur ES/Loki/GitLab-Tools anbieten (mit 40 Zusatz-Tools 8/40), Datum + Zeitzone in die Anfrage,
-Tool-Ausgaben auf ~2.000 Zeichen kürzen, keine Beispieldaten in Tool-Beschreibungen. Ihr `SYSTEM`-Prompt greift nur, wenn der
-Client keinen eigenen schickt. Getestet wurde der 27B mit Vulkan über beide Karten (siehe [Backend](#backend-rocm-oder-vulkan)).
-Zum Vergleich mit gleichen Einstellungen: `qwen3.8:27b-q8_0` kam auf 36/40 (Partner-Hostkey-Fall verfehlt, mehr Wiederholungen, 25 statt 20,5 min),
-deshalb bleibt qwen3.6 27B die Basis für `-abx-rca`.
+Basismodelle (in Open WebUI ausgeblendet): `qwen3.8:27b`, `qwen3.6:27b-q8_0`, `qwen3.6:27b-q4_K_M`, `qwen3.6:35b-a3b-q4_K_M`.
 
-`gemma3:27b` und `saba` gehörten zum Saba-Chat, der entfernt wird; beide können danach mit `ollama rm` weg.
+qwen3.8 schreibt rund doppelt so schnell wie qwen3.6, weil es **Multi-Token-Prediction** nutzt (`draft_num_predict 4`, im Basismodell
+enthalten): ein kleiner Zusatzkopf rät bis zu 4 Tokens voraus, das grosse Modell prüft sie in einem Durchgang (~76 % Treffer im Benchmark).
+Das kostet keine Genauigkeit. Achtung: qwen3.8 hat andere Defaults als qwen3.6 (`presence_penalty 0`, `temperature 1`), deshalb setzen
+die Modelfiles diese Werte explizit.
+
+Wichtiger als die Parameter (incident-lab): nur ES/Loki/GitLab-Tools anbieten (mit 40 Zusatz-Tools 8/40), Datum + Zeitzone in die Anfrage,
+Tool-Ausgaben auf ~2.000 Zeichen kürzen, keine Beispieldaten in Tool-Beschreibungen. Der `SYSTEM`-Prompt im Modelfile greift nur,
+wenn der Client keinen eigenen schickt (Copilot ersetzt ihn).
 
 ## Anlegen / aktualisieren
 
 ```powershell
-ollama create qwen3.8:27b-agent -f models/qwen3.8-27b-agent.Modelfile
+ollama create qwen3.8:27b-abx-rca-q4-128k -f models/qwen3.8-27b-abx-rca-q4-128k.Modelfile
 ```
 
 ```powershell
-ollama pull hf.co/unsloth/Qwen3.8-27B-GGUF:UD-Q6_K_XL
+ollama create qwen3.8:27b-coding-q4-128k -f models/qwen3.8-27b-coding-q4-128k.Modelfile
 ```
 
 ```powershell
-ollama create qwen3.8:27b-agent-q6 -f models/qwen3.8-27b-agent-q6.Modelfile
+ollama create qwen3.8:27b-research-q4-128k -f models/qwen3.8-27b-research-q4-128k.Modelfile
 ```
 
-```powershell
-ollama create qwen3.6:27b-abx-rca -f models/qwen3.6-27b-abx-rca.Modelfile
-```
+Analog für die übrigen Modelfiles in `models/`. Dauert Sekunden, nichts wird neu geladen, die Dateien des Basismodells werden geteilt.
+Gilt ab der nächsten Anfrage. Ist das Modell gerade geladen, sicherheitshalber vorher `ollama stop <name>`. Prüfen mit
+`ollama show <name> --modelfile`.
 
-```powershell
-ollama create qwen3.6:35b-a3b-abx-rca -f models/qwen3.6-35b-a3b-abx-rca.Modelfile
-```
+Beim Ändern beachten: `#` kommentiert nur eine Zeile. Ein mehrzeiliger `SYSTEM """…"""`-Block muss auf **allen** Zeilen
+auskommentiert werden, sonst bricht `ollama create` ab. Ohne `SYSTEM` gibt es gar keinen System-Prompt (die Basismodelle haben keinen).
+In Open WebUI kann pro Modell ein eigener System-Prompt hinterlegt sein, der hat Vorrang (z.B. beim Recherche-Modell mit `{{CURRENT_DATE}}`).
 
-Gilt ab der nächsten Anfrage, kein Neustart nötig. Kein `SYSTEM`-Prompt in Agent-Modellen: Copilot schickt eigene Anweisungen,
-ein fester Agent-Ablauf hat im Test falsche Tool-Calls verursacht. Ausnahme: die `-abx-rca`-Modelle haben einen kurzen
-Standard-Prompt, im incident-lab war ein System-Prompt Pflicht (ohne: 23/40).
+## Laden, Wechseln, Keep-Alive
+
+- `ollama ps`: welche Modelle gerade geladen sind (VRAM/RAM, CPU/GPU-Anteil, Kontext). `ollama stop <name>` entlädt, löscht nichts.
+- `ollama list`: installierte Modelle. `ollama rm <name>` löscht.
+- **Neu geladen wird nur bei anderen Modelldateien oder anderem Kontext (`num_ctx`).** Temperatur, System-Prompt usw. ändern nichts.
+  Deshalb haben alle qwen3.8-Varianten 128k: `-abx-rca-q4-128k`, `-coding-q4-128k`, `-research-q4-128k` und `-agent` teilen sich
+  **ein geladenes Modell** (19 GB). Gemessen: erstes Laden 20 s, Wechsel danach 0 s. Wechsel zu qwen3.6 oder qwen3-vl = neu laden.
+- Fragt ein Client ein anderes `num_ctx` an (z.B. der document-processor 32k), wird ebenfalls neu geladen.
+- **Keep-Alive** (`OLLAMA_KEEP_ALIVE`, seit 2026-11-08 `24h`): wie lange ein Modell nach der letzten Anfrage geladen bleibt.
+  Werte: Dauer wie `10m`, `2h`, `24h` oder Sekunden (`3600`); **`-1` = für immer geladen**; `0` = sofort entladen.
+  Pro Anfrage überschreibbar mit `"keep_alive"` im API-Aufruf. Ändern (danach Ollama neu starten):
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable("OLLAMA_KEEP_ALIVE", "-1", "User")
+  ```
+
+  Für immer geladen ist bequem, belegt aber dauerhaft ~19 GB VRAM. Läuft dann ein anderes Modell, wird das alte verdrängt,
+  sobald der Platz fehlt. Ein riesiges Modell mit CPU-Anteil hält dabei auch viel System-RAM fest (siehe `ollama ps`).
+- Mit `OLLAMA_NUM_PARALLEL=2` reserviert Ollama Kontext-Speicher für 2 Anfragen gleichzeitig (KV × 2). Bei grossen Modellen mit 128k
+  kann das den Unterschied zwischen "passt" und "läuft teilweise auf der CPU" ausmachen (27B Q8 128k: 39 GB → 21 % CPU).
 
 ## Q4 gegen Q6 (2026-11-05)
 
@@ -90,7 +114,7 @@ Mit zweiter Karte (RX 7800 XT, 16 GB, zusammen 48 GB) gibt es zwei Wege:
 - **Ein Modell maximal:** Q6/Q8 mit 256k über beide Karten verteilt. Nicht schneller, aber mehr Kontext.
 
 Ollama-Einstellungen (Windows-Benutzervariablen): `OLLAMA_VULKAN=1`, `HIP_VISIBLE_DEVICES=-1` (seit 2026-11-07), `OLLAMA_CONTEXT_LENGTH=131072`, `OLLAMA_KV_CACHE_TYPE=q8_0`,
-`OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KEEP_ALIVE=30m`.
+`OLLAMA_FLASH_ATTENTION=1`, `OLLAMA_KEEP_ALIVE=24h`.
 
 ## Backend: ROCm oder Vulkan
 

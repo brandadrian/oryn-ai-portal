@@ -1,8 +1,10 @@
-# USE CASE: Incident-Analyse / Root Cause (ES -> Loki -> GitLab) | Variante: Q4, 128k Kontext, nur R9700 (für GitHub Copilot) | Status: BENCHMARK LÄUFT (incident-lab 2026-11-08) | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
+# USE CASE: Incident-Analyse / Root Cause (ES -> Loki -> GitLab) | Variante: Q4, 128k Kontext, nur R9700 (für GitHub Copilot) | Status: GETESTET 39/40 (incident-lab 2026-11-08, bestes Modell auf einer Karte) | Backend: Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
 #
 # Qwen 3.8-27B Q4_K_M (dicht) für Incident-Analysen: Elasticsearch -> Loki -> GitLab, Ursache + Fix finden.
 # Gleiche Dateien wie qwen3.8:27b, kein zusätzlicher Speicher. Nur andere Parameter.
-# Benchmark incident-lab 2026-11-08 (C:\github\incident-lab\results\Q-qwen38-27b-q4-r9700.md): Ergebnis folgt.
+# Benchmark incident-lab 2026-11-08 (C:\github\incident-lab\results\Q-qwen38-27b-q4-r9700.md):
+#   39/40 Punkte, 10/10 Ursachen, Fix 10/10, Datei/Commit 9/10 (I05 Zeitzonen-Falle 3/4). 57.5 t/s Ausgabe dank MTP
+#   (draft_num_predict 4, ~76 % Treffer), 10.7 min für 10 Incidents, ~16 GB bei 32k, nur R9700.
 #   Vergleich gleiche Einstellungen, nur R9700: qwen3.6 27B Q4 37/40, qwen3.6 27B Q8 40/40; qwen3.8 27B Q8 (beide Karten) 36/40.
 # Erstellen:  ollama create qwen3.8:27b-abx-rca-q4-128k -f models/qwen3.8-27b-abx-rca-q4-128k.Modelfile
 # 128k statt 32k, weil Copilot-Unterhaltungen 40-55k Tokens haben. Empfohlen mit OLLAMA_NUM_PARALLEL=2.

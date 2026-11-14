@@ -1,0 +1,18 @@
+# USE CASE: Allgemeiner Agent / Tool-Calls (Copilot, Skripte) | Variante: Q4, 128k Kontext, nur R9700, ohne System-Prompt | Status: Test 05.11. (nicht im incident-lab) | Backend: Vulkan
+#
+# Qwen 3.8-27B Q4_K_M für allgemeine Agent-Aufgaben mit Tool-Calls.
+# Gleiche Dateien wie qwen3.8:27b, kein zusätzlicher Speicher. Nur andere Parameter.
+# Aus dem laufenden Modell rekonstruiert (2026-11-08); ursprünglich am 2026-11-05 angelegt.
+# Erstellen:  ollama create qwen3.8:27b-agent -f models/qwen3.8-27b-agent.Modelfile
+#
+# Niedrige Temperatur für stabile Tool-Calls. Bewusst kein SYSTEM-Prompt (Client schickt eigene Anweisungen).
+# Für Incidents besser qwen3.8:27b-abx-rca-q4-128k, für Code qwen3.8:27b-coding-q4-128k.
+FROM qwen3.8:27b
+
+PARAMETER temperature 0.3
+PARAMETER top_k 20
+PARAMETER top_p 0.8
+PARAMETER min_p 0
+PARAMETER presence_penalty 0
+PARAMETER repeat_penalty 1
+PARAMETER num_ctx 131072

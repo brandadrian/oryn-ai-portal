@@ -76,11 +76,22 @@ In Open WebUI kann pro Modell ein eigener System-Prompt hinterlegt sein, der hat
   Pro Anfrage überschreibbar mit `"keep_alive"` im API-Aufruf. Ändern (danach Ollama neu starten):
 
   ```powershell
-  [Environment]::SetEnvironmentVariable("OLLAMA_KEEP_ALIVE", "-1", "User")
+  [Environment]::SetEnvironmentVariable("OLLAMA_KEEP_ALIVE", "24h", "User")
   ```
 
-  Für immer geladen ist bequem, belegt aber dauerhaft ~19 GB VRAM. Läuft dann ein anderes Modell, wird das alte verdrängt,
-  sobald der Platz fehlt. Ein riesiges Modell mit CPU-Anteil hält dabei auch viel System-RAM fest (siehe `ollama ps`).
+  Neustart so, dass Ollama die Benutzer-Variablen sieht (sonst erbt es die Umgebung der aufrufenden Shell): Ollama im Tray beenden
+  und neu starten, oder PowerShell neu öffnen und dann `ollama app.exe` starten.
+
+  **Warum 24h:** Die R9700 ist nur für Ollama da (Monitor an der 7800 XT), der VRAM fehlt also niemandem. Ohne Keep-Alive
+  dauert die erste Anfrage nach einer Pause ~20 s Laden, und Copilots Prompt-Cache geht verloren. Kosten: ~19 GB VRAM dauerhaft belegt,
+  ein paar Watt mehr im Leerlauf.
+
+  **Selbst entladen** (`ollama stop <name>`) ist nur nötig, um die R9700 für etwas ausserhalb von Ollama freizumachen (z.B. Spiele) oder wenn ein
+  Modell mit CPU-Anteil viel System-RAM festhält (`ollama ps` zeigt dann z.B. `36%/64% CPU/GPU`). Wechsel zwischen Ollama-Modellen
+  regelt Ollama selbst: das alte wird verdrängt, sobald der Platz fehlt, auch bei `-1`.
+
+  `-1` (für immer) ist nicht gefährlich, aber ein versehentlich zu gross geladenes Modell (falsches `num_ctx`) bleibt dann im RAM hängen,
+  bis man es stoppt. Mit `24h` räumt es sich spätestens nach einem Tag selbst weg.
 - Mit `OLLAMA_NUM_PARALLEL=2` reserviert Ollama Kontext-Speicher für 2 Anfragen gleichzeitig (KV × 2). Bei grossen Modellen mit 128k
   kann das den Unterschied zwischen "passt" und "läuft teilweise auf der CPU" ausmachen (27B Q8 128k: 39 GB → 21 % CPU).
 

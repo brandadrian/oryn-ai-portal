@@ -1,0 +1,24 @@
+# ============================================================
+# qwen3.8:27b-q4-128k
+# ============================================================
+#
+# WOFÜR
+#   Standard-Qwen 3.8 27B ohne Anpassungen, nur mit grossem Kontext.
+#   Allgemeiner Chat, Ideen, alles ohne festen Zweck.
+#
+# EIGENSCHAFTEN
+#   Basis:         Qwen 3.8 27B, Q4_K_M (dicht), gleiche Dateien wie qwen3.8:27b
+#   Kontext:       128k Tokens, ca. 23 GB VRAM inkl. KV-Cache, passt auf die R9700
+#                  (nur mit OLLAMA_NUM_PARALLEL=1, bei 2 reicht der VRAM nicht)
+#   Sampling:      Standardwerte des Basismodells (u.a. temperature 1, presence_penalty 0)
+#   System-Prompt: keiner
+#
+# PARAMETER
+#   num_ctx 131072  128k Kontext, gleich wie analyse: beide teilen sich ein geladenes Modell
+#
+# ERSTELLEN
+#   ollama create qwen3.8:27b-q4-128k -f models/qwen3.8-27b-q4-128k.Modelfile
+# ============================================================
+FROM qwen3.8:27b
+
+PARAMETER num_ctx 131072

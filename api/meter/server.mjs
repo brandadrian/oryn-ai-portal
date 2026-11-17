@@ -16,6 +16,7 @@ async function flush() {
   const streams = new Map();
   for (const e of batch) {
     const labels = { job: 'ollama-api', model: e.model || 'unbekannt', client: e.client, endpoint: e.endpoint };
+    if (process.env.METER_GPU) labels.gpu = process.env.METER_GPU;   // z.B. rx7800 für die zweite Instanz (:11435)
     const key = JSON.stringify(labels);
     if (!streams.has(key)) streams.set(key, { stream: labels, values: [] });
     streams.get(key).values.push([String(e.ts * 1e6), JSON.stringify(e)]);

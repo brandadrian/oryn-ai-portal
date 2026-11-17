@@ -1,6 +1,7 @@
 # LLM-API von aussen: Traefik -> nginx (API-Key) -> meter (Messung) -> Ollama (nativ, GPU)
 # Start (im Ordner api/):  docker compose up -d
-#   https://ollama-api.oryn.brandadrian.com/v1  und  /api
+#   https://ollama-api.oryn.brandadrian.com/v1  und  /api   (R9700, Ollama :11434)
+#   https://${OLLAMA_API_2_HOST}/v1 und /api          (RX 7800 XT, Ollama :11435, gleicher Key; Host in .env)
 #   https://api.oryn.brandadrian.com/v1                (alt, läuft vorerst parallel)
 #   https://ollama.localhost                           (lokal testen)
 name: oryn-api
@@ -13,7 +14,7 @@ services:
     volumes:
       # nginx ersetzt ${OLLAMA_API_KEY} beim Start und schreibt nach conf.d/default.conf
       - ./templates:/etc/nginx/templates:ro
-    depends_on: [meter]
+    depends_on: [meter, meter2]
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -23,6 +24,12 @@ services:
       - traefik.http.routers.llm-api.entrypoints=websecure
       - traefik.http.routers.llm-api.tls.certresolver=le
       - traefik.http.routers.llm-api.service=llm-api
+      # zweite Ollama-Instanz (RX 7800 XT, :11435), nginx leitet diesen Host an meter2
+      # Hostname aus .env (OLLAMA_API_2_HOST); ohne Wert bricht docker compose ab
+      - traefik.http.routers.llm-api-2.rule=Host(`${OLLAMA_API_2_HOST:?OLLAMA_API_2_HOST in .env setzen}`) && (PathPrefix(`/v1`) || PathPrefix(`/api`))
+      - traefik.http.routers.llm-api-2.entrypoints=websecure
+      - traefik.http.routers.llm-api-2.tls.certresolver=le
+      - traefik.http.routers.llm-api-2.service=llm-api
       # lokal (selbstsigniertes Zertifikat)
       - traefik.http.routers.llm-api-local.rule=Host(`ollama.localhost`)
       - traefik.http.routers.llm-api-local.entrypoints=websecure
@@ -43,6 +50,22 @@ services:
     environment:
       - OLLAMA_URL=http://host.docker.internal:11434
       - LOKI_URL=http://host.docker.internal:3100
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks:
+      - default
+
+  # wie meter, aber für die zweite Ollama-Instanz (RX 7800 XT, scripts/ollama-gpu.ps1 -Mode split)
+  meter2:
+    image: node:22-alpine
+    restart: unless-stopped
+    command: ["node", "/app/server.mjs"]
+    volumes:
+      - ./meter:/app:ro
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11435
+      - LOKI_URL=http://host.docker.internal:3100
+      - METER_GPU=rx7800
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:

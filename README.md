@@ -9,6 +9,7 @@ im oryn-gateway selbst stehen keine Regeln für diese Dienste.
 |---------|-----|
 | `https://ollama-api.oryn.brandadrian.com/v1` | OpenAI-kompatible API (Copilot, SDKs), Bearer-Key nötig |
 | `https://ollama-api.oryn.brandadrian.com/api` | Ollama-API, Bearer-Key nötig (Alias: `api.oryn.brandadrian.com`) |
+| `https://ollama-scout.oryn.brandadrian.com/v1` · `/api` | Zweite Ollama-Instanz (RX 7800 XT, :11435, Modelle bis ca. 14B), gleicher Key |
 | `https://monitoring.oryn.brandadrian.com/monitor` | Grafana, öffentlich nur lesen (`/` leitet hierhin) |
 | `https://chat.oryn.brandadrian.com` | Open WebUI (`openwebui/`) |
 | `http://localhost:3000/monitor` | Grafana lokal mit Admin-Login |

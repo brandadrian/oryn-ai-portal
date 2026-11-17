@@ -165,3 +165,18 @@ powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode restart  #
 Nur eine Karte schränkt Ollama über `GGML_VK_VISIBLE_DEVICES` ein; den Index (Vulkan0/Vulkan1) liest das Skript aus dem `server.log`.
 Der Neustart entlädt alle Modelle, laufende Anfragen (API, Open WebUI) brechen ab. `qwen3.6:27b-abx-rca` braucht beide Karten
 (nur auf der R9700 lagert er in den System-RAM aus und wird sehr langsam).
+
+### Zwei Endpoints: R9700 auf 11434, RX 7800 XT auf 11435 (aktiv seit 2026-11-17)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode split     # A: R9700 :11434, B: RX 7800 XT :11435
+powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode split-rx  # umgekehrt
+```
+
+- **A** = Taskleisten-App, `127.0.0.1:11434`, Benutzervariablen (Kontext 131072).
+- **B** = zweiter `ollama serve`, `127.0.0.1:11435`, Variablen nur im Prozess: eigene Karte, `HIP_VISIBLE_DEVICES=-1`,
+  `OLLAMA_VULKAN=1`, `OLLAMA_CONTEXT_LENGTH=32768` (`$ctx2` im Skript), `OLLAMA_KEEP_ALIVE` wie A. Gleicher Modellordner.
+  Log: `%LOCALAPPDATA%\Ollama\server-11435.log`. Für B Modelle bis ca. 14B wählen (16 GB).
+- Aus Docker: `http://host.docker.internal:11435` (aus Open WebUI getestet). Öffentlich: `https://ollama-scout.oryn.brandadrian.com` ([api.md](api.md)).
+- **Kein Autostart für B:** Nach Neuanmeldung/Neustart startet nur A. B mit `-Mode split` (oder `-Mode restart`) neu starten.
+- Gemessen (150 Tokens Ausgabe): A `qwen3.8:27b-q4-128k` 53 t/s, 16,7 GB, 100 % GPU; B `qwen3.5:9b` 79 t/s, 5,8 GB, 100 % GPU.

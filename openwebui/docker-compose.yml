@@ -6,7 +6,7 @@ name: openwebui
 
 services:
   openwebui:
-    image: ghcr.io/open-webui/open-webui:v0.12.5
+    image: ghcr.io/open-webui/open-webui:v0.13.3
     restart: unless-stopped
     env_file: .env
     environment:

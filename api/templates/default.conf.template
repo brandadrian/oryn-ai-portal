@@ -4,8 +4,15 @@ map $http_authorization $ollama_auth_ok {
     default                    0;
 }
 
+# Host wählt die Ollama-Instanz: ${OLLAMA_API_2_HOST} -> meter2 (RX 7800 XT, :11435), sonst meter (R9700, :11434)
+map $host $ollama_meter {
+    ${OLLAMA_API_2_HOST} meter2:8080;
+    default              meter:8080;
+}
+
 server {
     listen 80;
+    resolver 127.0.0.11 valid=30s;   # Docker-DNS, nötig weil proxy_pass eine Variable nutzt
 
     # Bilder (base64) können gross sein
     client_max_body_size 50m;
@@ -19,7 +26,7 @@ server {
             return 401;
         }
 
-        proxy_pass http://meter:8080;            # Mess-Proxy, reicht an Ollama weiter
+        proxy_pass http://$ollama_meter;         # Mess-Proxy, reicht an Ollama weiter
         proxy_set_header Host localhost;
         proxy_set_header Origin "";          # Ollama blockt fremde Origins
         proxy_set_header Authorization "";   # Key nicht an Ollama weitergeben

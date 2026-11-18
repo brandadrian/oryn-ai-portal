@@ -6,7 +6,7 @@ Direkter Zugriff auf die lokalen Modelle (z.B. aus VS Code, Skripten, anderen Ap
 
 - Öffentlich: https://ollama-api.oryn.brandadrian.com (`/v1` und `/api`); `https://api.oryn.brandadrian.com` funktioniert vorerst als Alias
 - Lokal: https://ollama.localhost
-- Zweite Instanz (RX 7800 XT, Ollama :11435, Kontext 32k): https://ollama-scout.oryn.brandadrian.com (`/v1` und `/api`),
+- Zweite Instanz (RX 7800 XT, Ollama :11435, Kontext 128k): https://ollama-scout.oryn.brandadrian.com (`/v1` und `/api`),
   gleicher Key. Hostname in `api/.env` (`OLLAMA_API_2_HOST`), nginx leitet ihn an `meter2` weiter (Loki-Label `gpu="rx7800"`).
   Läuft nur, wenn Ollama im split-Modus ist (`scripts/ollama-gpu.ps1 -Mode split`, siehe [models.md](models.md)).
 

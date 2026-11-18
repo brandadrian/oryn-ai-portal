@@ -8,8 +8,10 @@
   -Mode rx      Vulkan, nur RX 7800 XT (16 GB)
   -Mode split   zwei getrennte Ollama-Instanzen: R9700 auf Port 11434 (Taskleisten-App), RX 7800 XT auf Port 11435
   -Mode split-rx  wie split, aber umgekehrt: RX 7800 XT auf 11434, R9700 auf 11435
-                Die zweite Instanz bekommt Kontext 32768 ($ctx2) und loggt nach %LOCALAPPDATA%\Ollama\server-11435.log. Beide nutzen denselben Modell-Ordner.
+                Die zweite Instanz bekommt Kontext 131072 ($ctx2) und loggt nach %LOCALAPPDATA%\Ollama\server-11435.log. Beide nutzen denselben Modell-Ordner.
                 Clients wählen die Karte über den Endpoint (http://localhost:11434 bzw. http://localhost:11435).
+  -Mode second  nur die zweite Instanz (split-Modus) starten, falls sie nicht läuft. Wartet bis zu 3 Minuten auf
+                Instanz A (11434), startet A nie neu. Für den Autostart beim Anmelden (scripts\install-ollama-autostart.ps1).
   -Mode rocm    zurück auf ROCm (Ollama-Standard). Achtung: 35B-A3B stürzt mit ROCm ab, wenn er auf beide Karten verteilt wird.
   -Mode restart Ollama nur neu starten, Einstellungen bleiben
   -Mode status  nur anzeigen (Standard ohne Parameter)
@@ -21,14 +23,14 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode r9700
 #>
-param([ValidateSet('both', 'r9700', 'rx', 'split', 'split-rx', 'rocm', 'restart', 'status')][string]$Mode = 'status')
+param([ValidateSet('both', 'r9700', 'rx', 'split', 'split-rx', 'second', 'rocm', 'restart', 'status')][string]$Mode = 'status')
 
 $log = Join-Path $env:LOCALAPPDATA 'Ollama\server.log'
 $log2 = Join-Path $env:LOCALAPPDATA 'Ollama\server-11435.log'
 $app = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe'
 $exe = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama.exe'
 $port2 = 11435
-$ctx2 = '32768'   # Kontext der zweiten Instanz (RX 7800 XT, 16 GB)
+$ctx2 = '131072'   # Kontext der zweiten Instanz (RX 7800 XT, 16 GB); qwen3.5:9b mit 128k ca. 8 GB VRAM
 # OLLAMA_SPLIT_SECOND: Vulkan-Index der Karte für die zweite Instanz (nur in den split-Modi gesetzt)
 $vars = 'OLLAMA_VULKAN', 'HIP_VISIBLE_DEVICES', 'GGML_VK_VISIBLE_DEVICES', 'OLLAMA_SPLIT_SECOND'
 # Beim Neustart zusätzlich aus den Benutzervariablen übernehmen (sonst erbt Ollama alte Werte aus der aufrufenden Shell)
@@ -90,6 +92,20 @@ function Start-Second {
 }
 
 if ($Mode -eq 'status') { Get-Help $MyInvocation.MyCommand.Path -Examples | Out-Null; Show-Status; return }
+
+if ($Mode -eq 'second') {
+  # nur Instanz B; A (Taskleisten-App) startet beim Anmelden selbst
+  function Test-Port([int]$p) { try { [bool](Invoke-RestMethod "http://127.0.0.1:$p/api/version" -TimeoutSec 2) } catch { $false } }
+  if ($null -eq [Environment]::GetEnvironmentVariable('OLLAMA_SPLIT_SECOND', 'User')) { Write-Host 'Kein split-Modus gesetzt, nichts zu tun.'; return }
+  if (Test-Port $port2) { Write-Host "Zweite Instanz läuft schon (Port $port2)."; return }
+  for ($i = 0; $i -lt 90 -and -not (Test-Port 11434); $i++) { Start-Sleep -Seconds 2 }
+  if (-not (Test-Port 11434)) { Write-Host 'Instanz A (11434) nicht erreichbar, starte B trotzdem.' }
+  # User-Variablen laden (Task/Shell können veraltete Werte haben)
+  foreach ($k in $keep) { $v = [Environment]::GetEnvironmentVariable($k, 'User'); if ($null -ne $v) { Set-Item "env:$k" $v } }
+  Start-Second
+  Write-Host ("Zweite Instanz (Port {0}): {1}" -f $port2, $(if (Test-Port $port2) { 'läuft' } else { 'NICHT erreichbar' }))
+  return
+}
 
 $target = if ($Mode -eq 'restart') { $null } else { switch ($Mode) {
   'both'  { @{ OLLAMA_VULKAN = '1'; HIP_VISIBLE_DEVICES = '-1'; GGML_VK_VISIBLE_DEVICES = $null } }

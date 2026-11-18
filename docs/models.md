@@ -175,8 +175,17 @@ powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode split-rx  
 
 - **A** = Taskleisten-App, `127.0.0.1:11434`, Benutzervariablen (Kontext 131072).
 - **B** = zweiter `ollama serve`, `127.0.0.1:11435`, Variablen nur im Prozess: eigene Karte, `HIP_VISIBLE_DEVICES=-1`,
-  `OLLAMA_VULKAN=1`, `OLLAMA_CONTEXT_LENGTH=32768` (`$ctx2` im Skript), `OLLAMA_KEEP_ALIVE` wie A. Gleicher Modellordner.
+  `OLLAMA_VULKAN=1`, `OLLAMA_CONTEXT_LENGTH=131072` (`$ctx2` im Skript, seit 2026-11-18, vorher 32768), KV-Cache `q8_0`,
+  `OLLAMA_KEEP_ALIVE` wie A. Gleicher Modellordner. `qwen3.5:9b` mit 128k: 7,35 GB, 100 % VRAM (KV-Cache 2,1 GB).
+  Gemessen: 62k-Prompt 830 t/s Einlesen, 124k-Prompt 640–835 t/s (ca. 150 s), Ausgabe 90–120 t/s bei kurzen Antworten.
+  Grund für 128k: Open-WebUI-Tool-Ketten (z. B. Gmail-Suche) überschritten 32k.
+- Sporadisch `chat prompt error … wsarecv: An existing connection was forcibly closed` (Ollama 0.40.16), auch bei 30k und
+  bei Prompts, die der Runner laut Log fertig abgearbeitet hat. Hängt nicht an der Kontextgrösse, der Runner stürzt nicht ab;
+  Anfrage wiederholen.
   Log: `%LOCALAPPDATA%\Ollama\server-11435.log`. Für B Modelle bis ca. 14B wählen (16 GB).
 - Aus Docker: `http://host.docker.internal:11435` (aus Open WebUI getestet). Öffentlich: `https://ollama-scout.oryn.brandadrian.com` ([api.md](api.md)).
-- **Kein Autostart für B:** Nach Neuanmeldung/Neustart startet nur A. B mit `-Mode split` (oder `-Mode restart`) neu starten.
+- **Autostart für B:** Die Taskleisten-App startet nur A. Die Aufgabe „Oryn Ollama Scout (11435)“ startet B beim Anmelden
+  (`ollama-gpu.ps1 -Mode second`: wartet auf A, startet nur B, nichts, wenn B schon läuft). Einmal einrichten:
+  `powershell -ExecutionPolicy Bypass -File scripts\install-ollama-autostart.ps1` (entfernen mit `-Uninstall`).
+  Von Hand: `scripts\ollama-gpu.ps1 -Mode second`.
 - Gemessen (150 Tokens Ausgabe): A `qwen3.8:27b-q4-128k` 53 t/s, 16,7 GB, 100 % GPU; B `qwen3.5:9b` 79 t/s, 5,8 GB, 100 % GPU.

@@ -76,3 +76,6 @@ monitoring/data/
 monitoring/data*/
 *.db
 *.sqlite
+# Env-Dateien pro Umgebung (z.B. shopware-chat/.env.staging)
+.env.*
+!.env.example

@@ -1,0 +1,1 @@
+Structure based on https://agentskills.io/home

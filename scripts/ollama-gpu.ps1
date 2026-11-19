@@ -30,8 +30,7 @@ $log2 = Join-Path $env:LOCALAPPDATA 'Ollama\server-11435.log'
 $app = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama app.exe'
 $exe = Join-Path $env:LOCALAPPDATA 'Programs\Ollama\ollama.exe'
 $port2 = 11435
-$ctx2 = '131072'   # Kontext der zweiten Instanz (RX 7800 XT, 16 GB); qwen3.5:9b mit 128k ca. 8 GB VRAM
-# OLLAMA_SPLIT_SECOND: Vulkan-Index der Karte für die zweite Instanz (nur in den split-Modi gesetzt)
+$ctx2 = '131072'   # Kontext der zweiten Instanz (RX 7800 XT, 16 GB); qwen3.5:9b mit 128k ca. 8 GB VRAM# OLLAMA_SPLIT_SECOND: Vulkan-Index der Karte für die zweite Instanz (nur in den split-Modi gesetzt)
 $vars = 'OLLAMA_VULKAN', 'HIP_VISIBLE_DEVICES', 'GGML_VK_VISIBLE_DEVICES', 'OLLAMA_SPLIT_SECOND'
 # Beim Neustart zusätzlich aus den Benutzervariablen übernehmen (sonst erbt Ollama alte Werte aus der aufrufenden Shell)
 $keep = 'OLLAMA_NUM_PARALLEL', 'OLLAMA_CONTEXT_LENGTH', 'OLLAMA_KV_CACHE_TYPE', 'OLLAMA_FLASH_ATTENTION'

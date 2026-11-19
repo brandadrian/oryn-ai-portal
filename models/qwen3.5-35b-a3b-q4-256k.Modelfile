@@ -1,0 +1,28 @@
+# ============================================================
+# qwen3.5:35b-a3b-q4-256k
+# ============================================================
+#
+# WOFÜR
+#   Schneller Allround-Chat: MoE mit nur ca. 3B aktiven Parametern pro Token,
+#   deutlich schneller als das dichte 27B. Chats, Texte, Ideen, Tool-Calls.
+#
+# EIGENSCHAFTEN
+#   Basis:         Qwen 3.5 35B-A3B (MoE), Q4_K_M mit MTP-Tensoren
+#                  (Tag qwen3.5:35b-a3b-mtp-q4_K_M, 24 GB, inkl. Vision)
+#   Kontext:       256k Tokens (Modell-Maximum 262144). Nur 10 von 40 Layern haben
+#                  KV-Cache, daher kostet der volle Kontext wenig VRAM.
+#                  Läuft auf der R9700 allein, nicht gleichzeitig mit qwen3.8:27b-q4-128k
+#                  (Ollama entlädt das jeweils andere Modell).
+#   Sampling:      Standardwerte des Basismodells (temperature 1, top_k 20, top_p 0.95,
+#                  presence_penalty 1.5, draft_num_predict 3)
+#   System-Prompt: keiner
+#
+# PARAMETER
+#   num_ctx 262144  voller Kontext des Modells
+#
+# ERSTELLEN
+#   ollama create qwen3.5:35b-a3b-q4-256k -f models/qwen3.5-35b-a3b-q4-256k.Modelfile
+# ============================================================
+FROM qwen3.5:35b-a3b-mtp-q4_K_M
+
+PARAMETER num_ctx 262144

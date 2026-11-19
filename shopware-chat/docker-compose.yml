@@ -69,14 +69,12 @@ services:
 
       # Shopware-MCP (über mcpo) als Tool-Server, für alle Benutzer, bei jedem Modell standardmäßig eingeschaltet
       TOOL_SERVER_CONNECTIONS: >-
-        [{"type":"openapi","url":"http://shopware-mcp:8000","path":"openapi.json","auth_type":"bearer","key":"${MCPO_API_KEY:?MCPO_API_KEY setzen}",
+        [{"type":"openapi","url":"http://shopware-mcp-${APP_ENV}:8000","path":"openapi.json","auth_type":"bearer","key":"${MCPO_API_KEY:?MCPO_API_KEY setzen}",
         "config":{"enable":true,"access_grants":[{"principal_type":"user","principal_id":"*","permission":"read"}]},
         "info":{"id":"shopware","name":"Shopware ${APP_ENV}","description":"Shopware Admin API (${SHOPWARE_URL:?SHOPWARE_URL setzen})"}}]
       DEFAULT_MODEL_METADATA: '{"toolIds":["server:shopware"]}'
-      # Systemprompt: Abfragen klein halten, damit Tool-Antworten nicht riesig werden
-      DEFAULT_MODEL_PARAMS: >-
-        {"function_calling":"native",
-        "system":"Du bist ein Assistent fuer den Shopware-Shop und nutzt dafuer das Shopware-Tool. Lade immer nur so wenig Daten wie fuer die Frage noetig. Jede Abfrage mit filter eingrenzen, vor allem nach Zeitraum (orderDateTime range): zuerst einen kleinen Zeitraum, z.B. den letzten Monat, und nur wenn noetig erweitern. Lieber zaehlen (count, sum) als Listen laden. Listen seitenweise und nur die erste Seite, ausser der Benutzer will mehr. Kommt der Fehler ergebnis_zu_gross, die Abfrage enger fassen, nie Zahlen schaetzen. Sag dem Benutzer kurz, auf welchen Zeitraum sich die Zahlen beziehen. Antworte kurz und auf Deutsch."}
+      # Systemprompt steht beim Modell (siehe Dienst setup), hier nur der Standard für native Tool-Aufrufe
+      DEFAULT_MODEL_PARAMS: '{"function_calling":"native"}'
     volumes:
       - data:/app/backend/data
     extra_hosts:
@@ -91,9 +89,12 @@ services:
       - traefik.http.services.shopware-chat-${APP_ENV}.loadbalancer.server.port=8080
     depends_on:
       - shopware-mcp
+    # Nur im Netz "proxy" (ein zweites Netz ging bei Docker Desktop beim Neuerstellen mehrfach verloren).
+    # Eindeutige Aliase pro Instanz, da alle Instanzen im selben Netz hängen.
     networks:
-      - default
-      - proxy
+      proxy:
+        aliases:
+          - webui-${APP_ENV}
 
   shopware-mcp:
     image: ghcr.io/open-webui/mcpo:main
@@ -114,38 +115,48 @@ services:
     volumes:
       - npm-cache:/root/.npm
       - ./limit-proxy.py:/limit-proxy.py:ro
+    labels:
+      - traefik.enable=false
+    # nicht über Traefik erreichbar, nur für Open WebUI (geschützt mit MCPO_API_KEY)
     networks:
-      - default
+      proxy:
+        aliases:
+          - shopware-mcp-${APP_ENV}
 
-  # Legt nach dem Start einmalig den einfachen Benutzer an (über die Admin-API), falls CHAT_USER_EMAIL gesetzt ist.
-  # Existiert er schon, passiert nichts.
-  user-init:
-    image: curlimages/curl:8.11.1
+  # Einrichtung nach dem Start (setup.py): Standardmodell mit Systemprompt und Shopware-Tool anlegen/aktualisieren,
+  # optional den einfachen Benutzer anlegen. Läuft bei jedem "up" erneut, bestehende Benutzer bleiben unverändert.
+  setup:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
     restart: "no"
     depends_on:
       - openwebui
+    entrypoint: ["python3", "/setup.py"]
     environment:
+      WEBUI_INTERNAL_URL: http://webui-${APP_ENV}:8080
       ADMIN_EMAIL: ${WEBUI_ADMIN_EMAIL}
       ADMIN_PASSWORD: ${WEBUI_ADMIN_PASSWORD}
-      USER_NAME: ${CHAT_USER_NAME:-Benutzer}
+      MODEL_ID: ${DEFAULT_MODEL:-qwen3.8:27b}
+      MODEL_NAME: ${DEFAULT_MODEL_NAME:-}
+      USER_NAME: ${CHAT_USER_NAME:-}
       USER_EMAIL: ${CHAT_USER_EMAIL:-}
       USER_PASSWORD: ${CHAT_USER_PASSWORD:-}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        [ -z "$$USER_EMAIL" ] && { echo "CHAT_USER_EMAIL leer, kein Benutzer angelegt"; exit 0; }
-        until curl -sf http://openwebui:8080/health >/dev/null; do sleep 3; done
-        TOKEN=$$(curl -sf http://openwebui:8080/api/v1/auths/signin -H 'Content-Type: application/json' \
-          -d "{\"email\":\"$$ADMIN_EMAIL\",\"password\":\"$$ADMIN_PASSWORD\"}" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
-        [ -z "$$TOKEN" ] && { echo "Admin-Login fehlgeschlagen"; exit 1; }
-        RES=$$(curl -s http://openwebui:8080/api/v1/auths/add -H "Authorization: Bearer $$TOKEN" -H 'Content-Type: application/json' \
-          -d "{\"name\":\"$$USER_NAME\",\"email\":\"$$USER_EMAIL\",\"password\":\"$$USER_PASSWORD\",\"role\":\"user\"}")
-        case "$$RES" in
-          *'"role":"user"'*) echo "Benutzer $$USER_EMAIL angelegt" ;;
-          *) echo "Benutzer nicht angelegt (existiert evtl. schon): $$(echo "$$RES" | head -c 200)" ;;
-        esac
+      SYSTEM_PROMPT: >-
+        Du bist ein Assistent für den Shopware-Shop. Heute ist {{CURRENT_DATE}}.
+        Nutze für Fragen nach Bestellungen, Produkten und Kunden zuerst das Tool shopware_search:
+        eine einzige Abfrage mit passenden Filtern statt vieler Einzelabfragen.
+        Nennt der Benutzer einen Zeitraum (z.B. letzte 30 Tage), IMMER einen range-Filter auf orderDateTime
+        mit dem konkret ausgerechneten Datum setzen. Produktnamen per contains auf lineItems.label suchen.
+        includes nur mit den nötigen Feldern und ein passendes limit setzen.
+        Nicht Bestellungen einzeln mit order_detail öffnen, wenn eine Suche reicht.
+        Für Zählungen und Summen aggregations verwenden statt Listen.
+        Die anderen Tools nur für Änderungen oder wenn shopware_search nicht reicht.
+        Kommt der Fehler ergebnis_zu_gross, die Abfrage enger fassen, nie Zahlen schätzen.
+        Sag kurz, auf welchen Zeitraum sich die Zahlen beziehen. Antworte kurz und auf Deutsch.
+    volumes:
+      - ./setup.py:/setup.py:ro
+      - ./skills:/skills:ro
     networks:
-      - default
+      - proxy
 
 volumes:
   data:

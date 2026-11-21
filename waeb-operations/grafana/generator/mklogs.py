@@ -66,6 +66,22 @@ def logs(title, expr, y, desc, h=10):
                         "dedupStrategy": "none", "prettifyLogMessage": False, "showLabels": False}}
 
 
+
+def banner(label, color, host, job, extra=""):
+    """Farbiges Kopf-Banner (HTML) für ein Umgebungs-Dashboard."""
+    html = (
+        f'<div style="display:flex;align-items:center;gap:18px;height:100%;padding:10px 18px;'
+        f'border-left:6px solid {color};border-radius:6px;background:linear-gradient(90deg,{color}26,transparent 70%)">'
+        f'<div style="font-size:30px;font-weight:700;letter-spacing:2px;color:{color}">{label}</div>'
+        f'<div style="line-height:1.5">'
+        f'<div style="font-size:17px;font-weight:600"><a href="https://{host}" target="_blank" style="color:inherit;text-decoration:none">{host} ↗</a></div>'
+        f'<div style="opacity:.75;font-size:13px">Shop-Logs <code>job = {job}</code> · nur lesend · Suchfeld oben filtert die Log-Liste{extra}</div>'
+        f'</div></div>'
+    )
+    return {"id": nid(), "type": "text", "title": "", "transparent": True, "gridPos": {"h": 3, "w": 24, "x": 0, "y": 0},
+            "options": {"mode": "html", "content": html}}
+
+
 def text(content, y, h=3):
     return {"id": nid(), "type": "text", "title": "", "gridPos": {"h": h, "w": 24, "x": 0, "y": y},
             "options": {"mode": "markdown", "content": content}, "transparent": False}
@@ -123,13 +139,13 @@ def write(uid, title, desc, panels, templating, tags):
 
 # PROD
 pid[0] = 0
-p, y = [text("## 🔴 PRODUCTION – www.geschenkkoerbe.ch\nNur Logs des Production-Shops (`job = shopware`), nur lesend. Das Suchfeld filtert die Log-Liste.", 0, h=2)], 2
+p, y = [banner("PRODUCTION", "#E02F44", "www.geschenkkoerbe.ch", "shopware")], 3
 sp, y = shop_section("shopware", "Production – www.geschenkkoerbe.ch  (job = shopware)", y)
 write("prod-logs", "PROD Logs", "Logs des Production-Shops www.geschenkkoerbe.ch.", p + sp, [SUCHE], ["prod", "logs"])
 
 # STAGING
 pid[0] = 0
-p, y = [text("## 🟡 STAGING – shopware-staging.geschenkkoerbe.ch\nNur Logs des Staging-Shops (`job = shopware_stage`), nur lesend.", 0, h=2)], 2
+p, y = [banner("STAGING", "#F2A20C", "shopware-staging.geschenkkoerbe.ch", "shopware_stage")], 3
 sp, y = shop_section("shopware_stage", "Staging – shopware-staging.geschenkkoerbe.ch  (job = shopware_stage)", y,
                      note="⚠️ **Staging liefert im Moment keine eigenen Logs.** Promtail liest für `shopware_stage` dieselben Dateien wie für Production "
                           "(`/var/www/share/shopware.geschenkkoerbe.ch/deployer/shared/var/log/`). Die Zahlen hier sind deshalb eine Kopie von Production. "

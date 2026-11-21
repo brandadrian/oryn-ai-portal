@@ -6,6 +6,8 @@ import http from 'node:http';
 const OLLAMA = new URL(process.env.OLLAMA_URL || 'http://host.docker.internal:11434');
 const LOKI = process.env.LOKI_URL || '';               // z.B. http://host.docker.internal:3100
 const PORT = Number(process.env.PORT || 8080);
+const TOKENIZE_RETRIES = Number(process.env.TOKENIZE_RETRIES ?? 2);   // Wiederholungen bei ollama_tokenize_reset
+const TOKENIZE_RESET = /chat prompt error|\/tokenize|wsarecv|forcibly closed/i;
 const INFERENCE = /^\/(api\/(chat|generate|embed|embeddings)|v1\/(chat\/completions|completions|embeddings))$/;
 
 // ---------- Loki ----------
@@ -139,9 +141,44 @@ const server = http.createServer((req, res) => {
     const headers = { ...req.headers, 'content-length': String(body.length) };
     delete headers['transfer-encoding'];
     delete headers['x-gateway-user'];
-    const up = http.request({
+    let up;
+    const send = (attempt) => {
+    const tA = Date.now();
+    up = http.request({
       hostname: OLLAMA.hostname, port: OLLAMA.port || 80, path: req.url, method: req.method, headers,
     }, (upRes) => {
+      // Ollama-Windows-Bug (github.com/ollama/ollama/issues/19696): der interne /tokenize-Aufruf an
+      // llama-server hängt bei grossen Prompts ~19 s und wird zurückgesetzt -> 500 "chat prompt error".
+      // Die Anfrage hat das Modell nie erreicht, daher gefahrlos wiederholbar. Jeder solche Versuch
+      // wird als eigener Loki-Eintrag mit error_type=ollama_tokenize_reset markiert.
+      if (measure && upRes.statusCode === 500 && attempt < TOKENIZE_RETRIES) {
+        const errChunks = [];
+        upRes.on('data', (c) => errChunks.push(c));
+        upRes.on('end', () => {
+          const errBody = Buffer.concat(errChunks);
+          const text = errBody.toString('utf8');
+          if (TOKENIZE_RESET.test(text) && !res.destroyed) {
+            const f = { ...s, ts: tA, status: 500, error_type: 'ollama_tokenize_reset', retried: true, attempt: attempt + 1,
+              duration_ms: Date.now() - tA, response_bytes: errBody.length };
+            try { const e = JSON.parse(text).error; f.error = String(e?.message ?? e ?? text).slice(0, 300); } catch { f.error = text.slice(0, 300); }
+            queue.push(f);
+            console.log(`500 ${s.client} ${s.model} ${path} ollama_tokenize_reset (Versuch ${attempt + 1}) ${f.duration_ms}ms -> wiederhole`);
+            s.retries = attempt + 1;
+            s.retry_wait_ms = (s.retry_wait_ms || 0) + f.duration_ms;
+            send(attempt + 1);
+            return;
+          }
+          // anderer 500er: unverändert weitergeben
+          res.writeHead(500, upRes.headers);
+          res.end(errBody);
+          s.status = 500; s.response_bytes = errBody.length; s.duration_ms = Date.now() - t0;
+          try { readStats(JSON.parse(text), s); } catch { s.error = text.slice(0, 300); }
+          if (TOKENIZE_RESET.test(text)) s.error_type = 'ollama_tokenize_reset';
+          queue.push(s);
+          console.log(`${s.status} ${s.client} ${s.model} ${path} ${s.error_type || 'fehler'} ${s.duration_ms}ms`);
+        });
+        return;
+      }
       res.writeHead(upRes.statusCode || 502, upRes.headers);
       s.status = upRes.statusCode;
       const parser = measure ? makeParser(String(upRes.headers['content-type'] || ''), s) : null;
@@ -164,8 +201,9 @@ const server = http.createServer((req, res) => {
         if (s.prompt_tokens && s.prompt_ms) s.prompt_tps = Math.round(s.prompt_tokens / (s.prompt_ms / 1000));
         if (s.prompt_tokens && s.cached_tokens != null) s.cache_pct = Math.round(100 * s.cached_tokens / s.prompt_tokens);
         if (s.ollama_ms == null && s.prompt_ms != null && s.output_ms != null) s.wait_ms = Math.max(0, s.duration_ms - s.prompt_ms - s.output_ms);
+        if (s.status === 500 && s.error && TOKENIZE_RESET.test(s.error)) s.error_type = 'ollama_tokenize_reset';
         queue.push(s);
-        console.log(`${s.status} ${s.client} ${s.model} ${path} prompt=${s.prompt_tokens ?? '?'} out=${s.output_tokens ?? '?'} ${s.duration_ms}ms`);
+        console.log(`${s.status} ${s.client} ${s.model} ${path} prompt=${s.prompt_tokens ?? '?'} out=${s.output_tokens ?? '?'} ${s.duration_ms}ms${s.retries ? ` (nach ${s.retries} Wiederholung(en))` : ''}${s.error_type ? ' ' + s.error_type : ''}`);
       });
       upRes.on('error', () => res.destroy());
     });
@@ -175,6 +213,8 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: `ollama nicht erreichbar: ${err.message}` }));
       if (measure) { s.status = 502; s.error = err.message; s.duration_ms = Date.now() - t0; queue.push(s); }
     });
+    up.end(body);
+    };
     // Client bricht ab -> Anfrage an Ollama abbrechen und als abgebrochen erfassen
     res.on('close', () => {
       if (!res.writableEnded) {
@@ -182,7 +222,7 @@ const server = http.createServer((req, res) => {
         if (measure) { s.status = s.status ?? 499; s.aborted = true; s.duration_ms = Date.now() - t0; queue.push(s); }
       }
     });
-    up.end(body);
+    send(0);
   });
 });
 

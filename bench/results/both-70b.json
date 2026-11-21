@@ -1,0 +1,33 @@
+﻿{
+    "label":  "both-70b",
+    "date":  "2026-11-20T08:02:27",
+    "endpoint":  "http://127.0.0.1:11434",
+    "ollama":  "0.40.16",
+    "pcie":  "AI PRO R9700 Gen5 x16; RX 7800 XT Gen4 x16",
+    "duration_s":  249,
+    "results":  [
+                    {
+                        "model":  "llama3.3:70b",
+                        "test":  "load",
+                        "load_s":  51.54,
+                        "wall_s":  52.16,
+                        "vram_gb":  42.5
+                    },
+                    {
+                        "model":  "llama3.3:70b",
+                        "test":  "short",
+                        "prompt_tokens":  46,
+                        "gen_tokens":  254,
+                        "pp_tps":  158.5,
+                        "tg_tps":  13.6
+                    },
+                    {
+                        "model":  "llama3.3:70b",
+                        "test":  "long",
+                        "prompt_tokens":  11059,
+                        "gen_tokens":  121,
+                        "pp_tps":  476.6,
+                        "tg_tps":  12.7
+                    }
+                ]
+}

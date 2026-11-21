@@ -1,0 +1,20 @@
+# Zugangsdaten und Schlüssel – nie committen
+.env
+.env.*
+!.env.example
+keys/
+*.pem
+*_key
+*_key.pub
+
+# Build- und Laufzeit-Artefakte
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.venv/
+
+# Daten/Exporte
+*.zip
+*.log
+grafana/data/

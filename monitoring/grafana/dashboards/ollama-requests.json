@@ -1,0 +1,1684 @@
+{
+ "uid": "ollama-requests",
+ "title": "Ollama Anfragen (Tabelle)",
+ "tags": [
+  "ollama",
+  "copilot"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "templating": {
+  "list": [
+   {
+    "name": "client",
+    "label": "Client",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki-local"
+    },
+    "query": {
+     "label": "client",
+     "refId": "A",
+     "stream": "{job=\"ollama-api\"}",
+     "type": 1
+    },
+    "definition": "label_values({job=\"ollama-api\"}, client)",
+    "includeAll": true,
+    "multi": true,
+    "allValue": ".*",
+    "current": {
+     "selected": true,
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "refresh": 2
+   },
+   {
+    "name": "model",
+    "label": "Modell",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki-local"
+    },
+    "query": {
+     "label": "model",
+     "refId": "A",
+     "stream": "{job=\"ollama-api\"}",
+     "type": 1
+    },
+    "definition": "label_values({job=\"ollama-api\"}, model)",
+    "includeAll": true,
+    "multi": true,
+    "allValue": ".*",
+    "current": {
+     "selected": true,
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "refresh": 2
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "stat",
+   "title": "Anfragen (ok)",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "Hänger (19-s-Bug)",
+   "description": "Vom Meter abgefangene und wiederholte Anfragen (github.com/ollama/ollama/issues/19696)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | error_type=\"ollama_tokenize_reset\" | retried=\"true\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 20
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Fehler bei Client",
+   "description": "Fehler, die beim Client (z. B. Copilot) angekommen sind",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status>=400 | retried!=\"true\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Gen t/s (Median)",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap output_tps | __error__=\"\" [$__range]) by ()",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 1,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Grösse (Median)",
+   "description": "Ab etwa 200 KB hängt Ollama auf Windows deutlich öfter",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | retried!=\"true\" | unwrap request_bytes | __error__=\"\" [$__range]) by ()",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "decbytes",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 150000
+       },
+       {
+        "color": "red",
+        "value": 220000
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Kontext (Median)",
+   "description": "",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 0
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap prompt_tokens | __error__=\"\" [$__range]) by ()",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 10,
+   "type": "table",
+   "title": "Pro Modell (Zeitraum)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 6,
+    "w": 24,
+    "x": 0,
+    "y": 4
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (model) (count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" [$__range]))",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "B",
+     "expr": "sum by (model) (count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | error_type=\"ollama_tokenize_reset\" | retried=\"true\" [$__range]))",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "C",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap output_tps | __error__=\"\" [$__range]) by (model)",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "D",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap prompt_tokens | __error__=\"\" [$__range]) by (model)",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "E",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | retried!=\"true\" | unwrap request_bytes | __error__=\"\" [$__range]) by (model)",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "F",
+     "expr": "quantile_over_time(0.5, {job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap duration_ms | __error__=\"\" [$__range]) by (model)",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    },
+    {
+     "refId": "G",
+     "expr": "avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap tools | __error__=\"\" [$__range]) by (model)",
+     "queryType": "instant",
+     "legendFormat": "{{model}}"
+    }
+   ],
+   "transformations": [
+    {
+     "id": "merge",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "indexByName": {
+       "model": 0,
+       "Value #A": 1,
+       "Value #B": 2,
+       "Value #C": 3,
+       "Value #D": 4,
+       "Value #E": 5,
+       "Value #F": 6,
+       "Value #G": 7
+      },
+      "renameByName": {
+       "model": "Modell",
+       "Value #A": "Anfragen ok",
+       "Value #B": "Hänger",
+       "Value #C": "Gen t/s (Median)",
+       "Value #D": "Kontext (Median)",
+       "Value #E": "Grösse (Median)",
+       "Value #F": "Dauer (Median)",
+       "Value #G": "Tools (Ø)"
+      }
+     }
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto"
+     },
+     "decimals": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s (Median)"
+      },
+      "properties": [
+       {
+        "id": "decimals",
+        "value": 1
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext (Median)"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "short"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse (Median)"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "decbytes"
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 150000
+          },
+          {
+           "color": "red",
+           "value": 220000
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer (Median)"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "ms"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 1
+          },
+          {
+           "color": "red",
+           "value": 10
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Zeit"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Startzeitpunkt der Anfrage beim Meter."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Modell"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Ollama-Modell, das der Client angefragt hat."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Client"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Erkannt am User-Agent, z. B. copilot (VS Code), open-webui, curl."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Status"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "HTTP-Status der Antwort. 200 = ok, 500 = Fehler in Ollama, 499 = Client hat abgebrochen."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Ollama-Windows-Bug (Issue 19696): Die Anfrage hing ~19 s, bevor sie das Modell erreichte. Der Meter hat sie automatisch wiederholt."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Wdh."
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Wie oft der Meter diese Anfrage wegen eines 19-s-Hängers wiederholen musste, bevor sie durchkam."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Grösse der Anfrage (JSON-Body): Chatverlauf + Tool-Beschreibungen. Ab ~200 KB hängt Ollama deutlich öfter."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Nachr."
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anzahl Nachrichten im mitgeschickten Chatverlauf (inkl. Tool-Aufrufe und -Ergebnisse)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Tools"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anzahl Tool-Beschreibungen, die der Client mitschickt. Weniger Tools = kleinere Anfrage."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Prompt-Tokens, die das Modell für diese Anfrage verarbeitet hat (ganzer Verlauf, inkl. Cache)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Cache %"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anteil des Kontexts, der aus dem Prompt-Cache kam und nicht neu gelesen werden musste. Hoch = schnell."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Ausgabe"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Vom Modell erzeugte Tokens (Antwort bzw. Tool-Aufruf)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Generierungstempo: Ausgabe-Tokens pro Sekunde."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prompt"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Zeit, die das Modell zum Lesen der neuen Prompt-Teile gebraucht hat."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Gesamtdauer der Anfrage beim Meter, inkl. Wartezeit und Wiederholungen."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Ende"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Warum die Antwort endete: stop = fertig, tool_calls = Modell ruft ein Tool auf, length = Längenlimit erreicht."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Anfragen ok"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Erfolgreiche Anfragen (Status 200) im gewählten Zeitraum."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typisches Generierungstempo (Median) im Zeitraum."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Kontextgrösse in Tokens (Median)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Anfragegrösse (Median). Ab ~200 KB mehr Hänger."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Dauer einer erfolgreichen Anfrage (Median)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Tools (Ø)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Durchschnittliche Anzahl mitgeschickter Tool-Beschreibungen."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anzahl 19-s-Hänger (Ollama-Bug), die der Meter abgefangen und wiederholt hat."
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true
+   },
+   "description": "Kennzahlen pro Modell im gewählten Zeitraum. Spalten:\n\n- **Hänger**: Anzahl 19-s-Hänger (Ollama-Bug), die der Meter abgefangen und wiederholt hat.\n- **Anfragen ok**: Erfolgreiche Anfragen (Status 200) im gewählten Zeitraum.\n- **Gen t/s (Median)**: Typisches Generierungstempo (Median) im Zeitraum.\n- **Kontext (Median)**: Typische Kontextgrösse in Tokens (Median).\n- **Grösse (Median)**: Typische Anfragegrösse (Median). Ab ~200 KB mehr Hänger.\n- **Dauer (Median)**: Typische Dauer einer erfolgreichen Anfrage (Median).\n- **Tools (Ø)**: Durchschnittliche Anzahl mitgeschickter Tool-Beschreibungen."
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Generierung t/s über Zeit",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 10
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "avg_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" | unwrap output_tps | __error__=\"\" [2m]) by (model)",
+     "queryType": "range",
+     "legendFormat": "{{model}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "showPoints": "auto",
+      "spanNulls": true
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "description": "Generierungstempo (Ausgabe-Tokens pro Sekunde), gemittelt über 2 Minuten, pro Modell."
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Anfragen und Hänger pro 5 Minuten",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 10
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status=\"200\" [5m]))",
+     "queryType": "range",
+     "legendFormat": "ok",
+     "step": "5m"
+    },
+    {
+     "refId": "B",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | error_type=\"ollama_tokenize_reset\" | retried=\"true\" [5m]))",
+     "queryType": "range",
+     "legendFormat": "Hänger",
+     "step": "5m"
+    },
+    {
+     "refId": "C",
+     "expr": "sum(count_over_time({job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} | json | __error__=\"\" | status>=400 | retried!=\"true\" [5m]))",
+     "queryType": "range",
+     "legendFormat": "Fehler bei Client",
+     "step": "5m"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 70,
+      "lineWidth": 1
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "ok"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "green"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "orange"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Fehler bei Client"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi"
+    }
+   },
+   "description": "Grün: erfolgreiche Anfragen. Orange: 19-s-Hänger, vom Meter abgefangen. Rot: Fehler, die beim Client angekommen sind."
+  },
+  {
+   "id": 20,
+   "type": "table",
+   "title": "Letzte Anfragen (neueste oben)",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-local"
+   },
+   "gridPos": {
+    "h": 16,
+    "w": 24,
+    "x": 0,
+    "y": 17
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{job=\"ollama-api\", client=~\"$client\", model=~\"$model\"} |= \"/chat/completions\"",
+     "queryType": "range",
+     "maxLines": 300
+    }
+   ],
+   "transformations": [
+    {
+     "id": "extractFields",
+     "options": {
+      "source": "Line",
+      "format": "json",
+      "replace": true,
+      "keepTime": true
+     }
+    },
+    {
+     "id": "organize",
+     "options": {
+      "indexByName": {
+       "Time": 0,
+       "model": 1,
+       "client": 2,
+       "status": 3,
+       "error_type": 4,
+       "retries": 5,
+       "request_bytes": 6,
+       "messages": 7,
+       "tools": 8,
+       "prompt_tokens": 9,
+       "cache_pct": 10,
+       "output_tokens": 11,
+       "output_tps": 12,
+       "prompt_ms": 13,
+       "duration_ms": 14,
+       "done_reason": 15
+      },
+      "excludeByName": {
+       "ts": true,
+       "user_agent": true,
+       "response_bytes": true,
+       "stream": true,
+       "first_byte_ms": true,
+       "load_ms": true,
+       "ollama_ms": true,
+       "prompt_tps": true,
+       "num_ctx": true,
+       "ip": true,
+       "endpoint": true,
+       "cached_tokens": true,
+       "wait_ms": true,
+       "output_ms": true,
+       "retry_wait_ms": true,
+       "retried": true,
+       "attempt": true,
+       "error": true,
+       "user": true,
+       "aborted": true,
+       "id": true,
+       "labels": true,
+       "tsNs": true,
+       "Line": true
+      },
+      "renameByName": {
+       "Time": "Zeit",
+       "model": "Modell",
+       "client": "Client",
+       "status": "Status",
+       "error_type": "Hänger",
+       "retries": "Wdh.",
+       "request_bytes": "Grösse",
+       "messages": "Nachr.",
+       "tools": "Tools",
+       "prompt_tokens": "Kontext",
+       "cache_pct": "Cache %",
+       "output_tokens": "Ausgabe",
+       "output_tps": "Gen t/s",
+       "prompt_ms": "Prompt",
+       "duration_ms": "Dauer",
+       "done_reason": "Ende"
+      }
+     }
+    }
+   ],
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "sortBy": [
+     {
+      "displayName": "Zeit",
+      "desc": true
+     }
+    ]
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "decbytes"
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 150000
+          },
+          {
+           "color": "red",
+           "value": 220000
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 40
+          },
+          {
+           "color": "green",
+           "value": 90
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "ms"
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 20000
+          },
+          {
+           "color": "red",
+           "value": 45000
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prompt"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "ms"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "short"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Cache %"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "red",
+           "value": null
+          },
+          {
+           "color": "orange",
+           "value": 40
+          },
+          {
+           "color": "green",
+           "value": 70
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Status"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "thresholds",
+        "value": {
+         "mode": "absolute",
+         "steps": [
+          {
+           "color": "green",
+           "value": null
+          },
+          {
+           "color": "red",
+           "value": 300
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "ollama_tokenize_reset": {
+            "text": "⚠ 19-s-Hänger",
+            "color": "orange"
+           }
+          }
+         }
+        ]
+       },
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Zeit"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 165
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Modell"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 200
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Zeit"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Startzeitpunkt der Anfrage beim Meter."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Modell"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Ollama-Modell, das der Client angefragt hat."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Client"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Erkannt am User-Agent, z. B. copilot (VS Code), open-webui, curl."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Status"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "HTTP-Status der Antwort. 200 = ok, 500 = Fehler in Ollama, 499 = Client hat abgebrochen."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Hänger"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Ollama-Windows-Bug (Issue 19696): Die Anfrage hing ~19 s, bevor sie das Modell erreichte. Der Meter hat sie automatisch wiederholt."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Wdh."
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Wie oft der Meter diese Anfrage wegen eines 19-s-Hängers wiederholen musste, bevor sie durchkam."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Grösse der Anfrage (JSON-Body): Chatverlauf + Tool-Beschreibungen. Ab ~200 KB hängt Ollama deutlich öfter."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Nachr."
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anzahl Nachrichten im mitgeschickten Chatverlauf (inkl. Tool-Aufrufe und -Ergebnisse)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Tools"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anzahl Tool-Beschreibungen, die der Client mitschickt. Weniger Tools = kleinere Anfrage."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Prompt-Tokens, die das Modell für diese Anfrage verarbeitet hat (ganzer Verlauf, inkl. Cache)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Cache %"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Anteil des Kontexts, der aus dem Prompt-Cache kam und nicht neu gelesen werden musste. Hoch = schnell."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Ausgabe"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Vom Modell erzeugte Tokens (Antwort bzw. Tool-Aufruf)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Generierungstempo: Ausgabe-Tokens pro Sekunde."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Prompt"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Zeit, die das Modell zum Lesen der neuen Prompt-Teile gebraucht hat."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Gesamtdauer der Anfrage beim Meter, inkl. Wartezeit und Wiederholungen."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Ende"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Warum die Antwort endete: stop = fertig, tool_calls = Modell ruft ein Tool auf, length = Längenlimit erreicht."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Anfragen ok"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Erfolgreiche Anfragen (Status 200) im gewählten Zeitraum."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Gen t/s (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typisches Generierungstempo (Median) im Zeitraum."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kontext (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Kontextgrösse in Tokens (Median)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Grösse (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Anfragegrösse (Median). Ab ~200 KB mehr Hänger."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Dauer (Median)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Typische Dauer einer erfolgreichen Anfrage (Median)."
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Tools (Ø)"
+      },
+      "properties": [
+       {
+        "id": "description",
+        "value": "Durchschnittliche Anzahl mitgeschickter Tool-Beschreibungen."
+       }
+      ]
+     }
+    ]
+   },
+   "description": "Eine Zeile pro Anfrage, neueste oben. Spalten:\n\n- **Zeit**: Startzeitpunkt der Anfrage beim Meter.\n- **Modell**: Ollama-Modell, das der Client angefragt hat.\n- **Client**: Erkannt am User-Agent, z. B. copilot (VS Code), open-webui, curl.\n- **Status**: HTTP-Status der Antwort. 200 = ok, 500 = Fehler in Ollama, 499 = Client hat abgebrochen.\n- **Hänger**: Ollama-Windows-Bug (Issue 19696): Die Anfrage hing ~19 s, bevor sie das Modell erreichte. Der Meter hat sie automatisch wiederholt.\n- **Wdh.**: Wie oft der Meter diese Anfrage wegen eines 19-s-Hängers wiederholen musste, bevor sie durchkam.\n- **Grösse**: Grösse der Anfrage (JSON-Body): Chatverlauf + Tool-Beschreibungen. Ab ~200 KB hängt Ollama deutlich öfter.\n- **Nachr.**: Anzahl Nachrichten im mitgeschickten Chatverlauf (inkl. Tool-Aufrufe und -Ergebnisse).\n- **Tools**: Anzahl Tool-Beschreibungen, die der Client mitschickt. Weniger Tools = kleinere Anfrage.\n- **Kontext**: Prompt-Tokens, die das Modell für diese Anfrage verarbeitet hat (ganzer Verlauf, inkl. Cache).\n- **Cache %**: Anteil des Kontexts, der aus dem Prompt-Cache kam und nicht neu gelesen werden musste. Hoch = schnell.\n- **Ausgabe**: Vom Modell erzeugte Tokens (Antwort bzw. Tool-Aufruf).\n- **Gen t/s**: Generierungstempo: Ausgabe-Tokens pro Sekunde.\n- **Prompt**: Zeit, die das Modell zum Lesen der neuen Prompt-Teile gebraucht hat.\n- **Dauer**: Gesamtdauer der Anfrage beim Meter, inkl. Wartezeit und Wiederholungen.\n- **Ende**: Warum die Antwort endete: stop = fertig, tool_calls = Modell ruft ein Tool auf, length = Längenlimit erreicht."
+  }
+ ],
+ "description": "Pro Anfrage: Modell, Grösse, Tools, Kontext, Tempo und die vom Meter abgefangenen 19-s-Hänger (Ollama-Issue 19696)."
+}

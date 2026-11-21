@@ -27,6 +27,15 @@ API_KEY = os.environ.get("MCPO_KEY", "")
 SW_URL = os.environ.get("SHOPWARE_API_URL", "").rstrip("/")
 SW_ID = os.environ.get("SHOPWARE_API_CLIENT_ID", "")
 SW_SECRET = os.environ.get("SHOPWARE_API_CLIENT_SECRET", "")
+# SHOPWARE_READONLY=true: alle schreibenden Tools (create, update, delete, upload, …) werden aus der
+# Tool-Liste entfernt und Aufrufe darauf mit 403 abgelehnt. Für PROD in waeb-operations Standard.
+READONLY = os.environ.get("SHOPWARE_READONLY", "false").lower() in ("1", "true", "yes")
+WRITE_OP = re.compile(r"(^|_)(create|update|delete|upsert|upload|change|sync|assign|remove|add|send|set|merge|clone|duplicate|import)(_|$)", re.I)
+
+
+def is_write(path: str) -> bool:
+    name = path.strip("/").split("/")[-1]
+    return bool(name) and name != "shopware_search" and bool(WRITE_OP.search(name))
 HOP = {"connection", "keep-alive", "transfer-encoding", "content-length", "content-encoding", "host"}
 
 SEARCH_DESCRIPTION = (
@@ -147,6 +156,8 @@ def compact(body: bytes) -> bytes:
 
 def patch_openapi(body: bytes) -> bytes:
     spec = json.loads(body)
+    if READONLY:
+        spec["paths"] = {k: v for k, v in spec.get("paths", {}).items() if not is_write(k)}
     spec.setdefault("paths", {})["/shopware_search"] = {
         "post": {
             "operationId": "shopware_search",
@@ -198,6 +209,10 @@ class Handler(BaseHTTPRequestHandler):
             body = compact(body)
             print(f"POST /shopware_search {req.get('entity') if isinstance(req, dict) else ''} {before} -> {len(body)} bytes", flush=True)
             return self._send(status, body)
+
+        if READONLY and self.command == "POST" and is_write(path):
+            print(f"BLOCKIERT (readonly) POST {path}", flush=True)
+            return self._send(403, dumps({"detail": "Nur lesend: schreibende Shopware-Aktionen sind hier gesperrt."}))
 
         headers = {k: v for k, v in self.headers.items() if k.lower() not in HOP}
         upstream = urllib.request.Request(UPSTREAM + self.path, data=data, headers=headers, method=self.command)

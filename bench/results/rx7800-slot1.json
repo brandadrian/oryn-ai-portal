@@ -1,0 +1,33 @@
+﻿{
+    "label":  "rx7800-slot1",
+    "date":  "2026-11-20T08:46:39",
+    "endpoint":  "http://127.0.0.1:11435",
+    "ollama":  "0.40.16",
+    "pcie":  "AI PRO R9700 Gen5 x16; RX 7800 XT Gen4 x16",
+    "duration_s":  52,
+    "results":  [
+                    {
+                        "model":  "qwen3.5:9b",
+                        "test":  "load",
+                        "load_s":  7.99,
+                        "wall_s":  8.12,
+                        "vram_gb":  7.4
+                    },
+                    {
+                        "model":  "qwen3.5:9b",
+                        "test":  "short",
+                        "prompt_tokens":  49,
+                        "gen_tokens":  164,
+                        "pp_tps":  511.4,
+                        "tg_tps":  81.1
+                    },
+                    {
+                        "model":  "qwen3.5:9b",
+                        "test":  "long",
+                        "prompt_tokens":  23878,
+                        "gen_tokens":  128,
+                        "pp_tps":  1349,
+                        "tg_tps":  72.6
+                    }
+                ]
+}

@@ -1,0 +1,474 @@
+{
+ "uid": "prod-logs",
+ "title": "PROD Logs",
+ "tags": [
+  "prod",
+  "logs"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "1m",
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "links": [
+  {
+   "title": "PROD Logs",
+   "type": "link",
+   "url": "/d/prod-logs",
+   "icon": "doc"
+  },
+  {
+   "title": "STAGING Logs",
+   "type": "link",
+   "url": "/d/staging-logs",
+   "icon": "doc"
+  },
+  {
+   "title": "Server",
+   "type": "link",
+   "url": "/d/maxcluster-server",
+   "icon": "dashboard"
+  }
+ ],
+ "description": "Logs des Production-Shops www.geschenkkoerbe.ch.",
+ "templating": {
+  "list": [
+   {
+    "name": "suche",
+    "label": "Suche in Log-Listen",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": ""
+    }
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "text",
+   "title": "",
+   "gridPos": {
+    "h": 2,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "options": {
+    "mode": "markdown",
+    "content": "## 🔴 PRODUCTION – www.geschenkkoerbe.ch\nNur Logs des Production-Shops (`job = shopware`), nur lesend. Das Suchfeld filtert die Log-Liste."
+   },
+   "transparent": false
+  },
+  {
+   "id": 2,
+   "type": "row",
+   "title": "Production – www.geschenkkoerbe.ch  (job = shopware)",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 2
+   },
+   "panels": []
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Fehler",
+   "description": "Zeilen mit Level ERROR, CRITICAL, ALERT oder EMERGENCY im gewählten Zeitraum.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 0,
+    "y": 3
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=~\"ERROR|CRITICAL|ALERT|EMERGENCY\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 50
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Kritisch",
+   "description": "Zeilen mit Level CRITICAL, ALERT oder EMERGENCY, z. B. unbehandelte Exceptions.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 6,
+    "y": 3
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=~\"CRITICAL|ALERT|EMERGENCY\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Warnungen",
+   "description": "Zeilen mit Level WARNING.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 12,
+    "y": 3
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=\"WARNING\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Log-Zeilen gesamt",
+   "description": "Alle Zeilen dieses Bereichs, inkl. INFO und DEBUG.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 18,
+    "y": 3
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"shopware\"} [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 7,
+   "type": "timeseries",
+   "title": "Fehler pro Kanal",
+   "description": "Fehler (ERROR und höher) über die Zeit, aufgeteilt nach Monolog-Kanal (Plugin bzw. Bereich).",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 7
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (channel) (count_over_time({job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=~\"ERROR|CRITICAL|ALERT|EMERGENCY\" [$__interval]))",
+     "queryType": "range",
+     "legendFormat": "{{channel}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 8,
+   "type": "table",
+   "title": "Häufigste Fehler",
+   "description": "Die 15 häufigsten Fehlermeldungen im Zeitraum, ohne Kontext-Daten am Zeilenende.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 7
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "topk(15, sum by (channel, msg) (count_over_time({job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=~\"ERROR|CRITICAL|ALERT|EMERGENCY\" [$__range])))",
+     "queryType": "instant",
+     "format": "table"
+    }
+   ],
+   "transformations": [
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true
+      },
+      "indexByName": {
+       "Value": 0,
+       "channel": 1,
+       "msg": 2
+      },
+      "renameByName": {
+       "Value": "Anzahl",
+       "channel": "Kanal",
+       "msg": "Meldung"
+      }
+     }
+    }
+   ],
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "sortBy": [
+     {
+      "displayName": "Anzahl",
+      "desc": true
+     }
+    ]
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "align": "auto"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Anzahl"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 80
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Kanal"
+      },
+      "properties": [
+       {
+        "id": "custom.width",
+        "value": 240
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": 9,
+   "type": "logs",
+   "title": "Fehler und Warnungen",
+   "description": "Rohzeilen mit Level WARNING und höher, neueste oben. Das Suchfeld oben filtert zusätzlich.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 15
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{job=\"shopware\"} | regexp `\\] (?P<channel>[A-Za-z0-9_-]+)\\.(?P<level>[A-Z]+): (?P<msg>[^\\[{]{0,160})` | level=~\"WARNING|ERROR|CRITICAL|ALERT|EMERGENCY\" |~ \"(?i)$suche\"",
+     "queryType": "range",
+     "maxLines": 500
+    }
+   ],
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false,
+    "showLabels": false
+   }
+  }
+ ]
+}

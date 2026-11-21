@@ -1,0 +1,56 @@
+﻿{
+    "label":  "both-r9700s1-rx7800s2",
+    "date":  "2026-11-19T22:55:17",
+    "endpoint":  "http://127.0.0.1:11434",
+    "ollama":  "0.40.16",
+    "pcie":  "AI PRO R9700 Gen5 x16; RX 7800 XT Gen4 x16",
+    "duration_s":  228,
+    "results":  [
+                    {
+                        "model":  "qwen3.5:35b-a3b-q4-256k",
+                        "test":  "load",
+                        "load_s":  28.74,
+                        "wall_s":  30.1,
+                        "vram_gb":  14.3
+                    },
+                    {
+                        "model":  "qwen3.5:35b-a3b-q4-256k",
+                        "test":  "short",
+                        "prompt_tokens":  48,
+                        "gen_tokens":  184,
+                        "pp_tps":  438.6,
+                        "tg_tps":  103.4
+                    },
+                    {
+                        "model":  "qwen3.5:35b-a3b-q4-256k",
+                        "test":  "long",
+                        "prompt_tokens":  23879,
+                        "gen_tokens":  128,
+                        "pp_tps":  2593.1,
+                        "tg_tps":  79.6
+                    },
+                    {
+                        "model":  "qwen3.8:27b-q4-128k",
+                        "test":  "load",
+                        "load_s":  19.95,
+                        "wall_s":  20.49,
+                        "vram_gb":  19.2
+                    },
+                    {
+                        "model":  "qwen3.8:27b-q4-128k",
+                        "test":  "short",
+                        "prompt_tokens":  50,
+                        "gen_tokens":  180,
+                        "pp_tps":  213.2,
+                        "tg_tps":  39.7
+                    },
+                    {
+                        "model":  "qwen3.8:27b-q4-128k",
+                        "test":  "long",
+                        "prompt_tokens":  23878,
+                        "gen_tokens":  128,
+                        "pp_tps":  647.7,
+                        "tg_tps":  43.2
+                    }
+                ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "loki-mcp",
+  "version": "1.0.0",
+  "description": "Read-only MCP server for Loki",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "type": "module",
+  "bin": {
+    "loki-mcp": "dist/index.js"
+  }
+}

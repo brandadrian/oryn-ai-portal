@@ -1,0 +1,1142 @@
+{
+ "uid": "maxcluster-server",
+ "title": "Server (Metriken und /var/log)",
+ "tags": [
+  "maxcluster",
+  "server",
+  "prometheus"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "1m",
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "description": "CPU, RAM, Disk, Last und Netzwerk des Maxcluster-Servers (Prometheus, node_exporter).",
+ "links": [
+  {
+   "title": "PROD Logs",
+   "type": "link",
+   "url": "/d/prod-logs",
+   "icon": "doc"
+  },
+  {
+   "title": "STAGING Logs",
+   "type": "link",
+   "url": "/d/staging-logs",
+   "icon": "doc"
+  },
+  {
+   "title": "Server",
+   "type": "link",
+   "url": "/d/maxcluster-server",
+   "icon": "dashboard"
+  }
+ ],
+ "panels": [
+  {
+   "id": 1,
+   "type": "row",
+   "title": "Jetzt",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 2,
+   "type": "stat",
+   "title": "CPU",
+   "description": "Durchschnittliche CPU-Auslastung aller 6 Kerne (5 min).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\",instance=\"localhost:9100\"}[5m])))",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "RAM belegt",
+   "description": "Belegter Arbeitsspeicher ohne Cache (MemAvailable).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * (1 - node_memory_MemAvailable_bytes{instance=\"localhost:9100\"} / node_memory_MemTotal_bytes{instance=\"localhost:9100\"})",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Disk / belegt",
+   "description": "Belegung der Systempartition /.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\",instance=\"localhost:9100\"} / node_filesystem_size_bytes{mountpoint=\"/\",instance=\"localhost:9100\"})",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 80
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Last pro Kern",
+   "description": "Load (5 min) geteilt durch Anzahl Kerne. Über 1 = mehr Arbeit als Kerne.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "node_load5{instance=\"localhost:9100\"} / scalar(count(node_cpu_seconds_total{mode=\"idle\",instance=\"localhost:9100\"}))",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "decimals": 2,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 2
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Netz eingehend",
+   "description": "Eingehender Netzverkehr auf eth0.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(node_network_receive_bytes_total{device=\"eth0\",instance=\"localhost:9100\"}[5m])",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "decimals": 1,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Läuft seit",
+   "description": "Zeit seit dem letzten Neustart des Servers.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "time() - node_boot_time_seconds{instance=\"localhost:9100\"}",
+     "instant": true
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 8,
+   "type": "row",
+   "title": "Verlauf",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": []
+  },
+  {
+   "id": 9,
+   "type": "timeseries",
+   "title": "CPU nach Art",
+   "description": "CPU-Zeit nach Art: user (PHP, MySQL …), system (Kernel), iowait (warten auf Disk), steal (vom Hoster abgezogen).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 6
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * avg by (mode) (rate(node_cpu_seconds_total{mode!=\"idle\",instance=\"localhost:9100\"}[5m]))",
+     "legendFormat": "{{mode}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 40,
+      "stacking": {
+       "mode": "normal"
+      },
+      "showPoints": "never"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Arbeitsspeicher",
+   "description": "Belegter Speicher, Datei-Cache und Gesamtspeicher (22 GB).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 6
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "node_memory_MemTotal_bytes{instance=\"localhost:9100\"} - node_memory_MemAvailable_bytes{instance=\"localhost:9100\"}",
+     "legendFormat": "belegt"
+    },
+    {
+     "refId": "B",
+     "expr": "node_memory_Cached_bytes{instance=\"localhost:9100\"} + node_memory_Buffers_bytes{instance=\"localhost:9100\"}",
+     "legendFormat": "Cache/Buffer"
+    },
+    {
+     "refId": "C",
+     "expr": "node_memory_MemTotal_bytes{instance=\"localhost:9100\"}",
+     "legendFormat": "gesamt"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 15,
+      "stacking": {
+       "mode": "none"
+      },
+      "showPoints": "never"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Last (Load)",
+   "description": "Systemlast. Liegt sie dauerhaft über der Zahl der Kerne (6), wartet Arbeit.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 14
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "node_load1{instance=\"localhost:9100\"}",
+     "legendFormat": "1 min"
+    },
+    {
+     "refId": "B",
+     "expr": "node_load5{instance=\"localhost:9100\"}",
+     "legendFormat": "5 min"
+    },
+    {
+     "refId": "C",
+     "expr": "node_load15{instance=\"localhost:9100\"}",
+     "legendFormat": "15 min"
+    },
+    {
+     "refId": "D",
+     "expr": "count(node_cpu_seconds_total{mode=\"idle\",instance=\"localhost:9100\"})",
+     "legendFormat": "Kerne"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 15,
+      "stacking": {
+       "mode": "none"
+      },
+      "showPoints": "never"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Disk-Belegung",
+   "description": "Belegung der Systempartition / und des MySQL-Speichers (/var/lib/mysql, Netzwerkspeicher).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 14
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=~\"/|/var/lib/mysql\",instance=\"localhost:9100\"} / node_filesystem_size_bytes{mountpoint=~\"/|/var/lib/mysql\",instance=\"localhost:9100\"})",
+     "legendFormat": "{{mountpoint}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 15,
+      "stacking": {
+       "mode": "none"
+      },
+      "showPoints": "never"
+     },
+     "max": 100,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Disk lesen/schreiben",
+   "description": "Lese- und Schreibrate aller lokalen Disks.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 22
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(node_disk_read_bytes_total{instance=\"localhost:9100\"}[5m]))",
+     "legendFormat": "lesen"
+    },
+    {
+     "refId": "B",
+     "expr": "sum(rate(node_disk_written_bytes_total{instance=\"localhost:9100\"}[5m]))",
+     "legendFormat": "schreiben"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 15,
+      "stacking": {
+       "mode": "none"
+      },
+      "showPoints": "never"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 14,
+   "type": "timeseries",
+   "title": "Netzwerk eth0",
+   "description": "Netzverkehr der Netzwerkkarte eth0 (Besucher, Galaxus, Zahlungsanbieter …).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 22
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(node_network_receive_bytes_total{device=\"eth0\",instance=\"localhost:9100\"}[5m])",
+     "legendFormat": "eingehend"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(node_network_transmit_bytes_total{device=\"eth0\",instance=\"localhost:9100\"}[5m])",
+     "legendFormat": "ausgehend"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 15,
+      "stacking": {
+       "mode": "none"
+      },
+      "showPoints": "never"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 101,
+   "type": "row",
+   "title": "Server-Logs – /var/log  (job = varlogs, gemeinsam für PROD und STAGING)",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 30
+   },
+   "panels": []
+  },
+  {
+   "id": 102,
+   "type": "stat",
+   "title": "SSH: fehlgeschlagene Anmeldungen",
+   "description": "Fehlgeschlagene oder ungültige SSH-Anmeldeversuche laut auth.log (meist automatisierte Scans).",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 0,
+    "y": 31
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"varlogs\", filename=\"/var/log/auth.log\"} |~ \"Failed password|Invalid user|authentication failure|Connection closed by authenticating user\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 50
+       },
+       {
+        "color": "red",
+        "value": 1000
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 103,
+   "type": "stat",
+   "title": "PHP-FPM: Warnungen/Fehler",
+   "description": "Warnungen und Fehler der PHP-FPM-Pools (z. B. max_children erreicht, langsame Requests).",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 6,
+    "y": 31
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"varlogs\", filename=~\"/var/log/php.*-fpm.log\"} |~ \"WARNING|ERROR|ALERT\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 50
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 104,
+   "type": "stat",
+   "title": "Zertifikate (lego)",
+   "description": "Fehler beim Erneuern der Let's-Encrypt-Zertifikate (lego.log).",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 12,
+    "y": 31
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"varlogs\", filename=\"/var/log/lego.log\"} |~ \"(?i)error|fail\" [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 105,
+   "type": "stat",
+   "title": "Log-Zeilen gesamt",
+   "description": "Alle Zeilen aus /var/log im Zeitraum.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 4,
+    "w": 6,
+    "x": 18,
+    "y": 31
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"varlogs\"} [$__range]))",
+     "queryType": "instant"
+    }
+   ],
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "decimals": 0,
+     "noValue": "0",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   }
+  },
+  {
+   "id": 106,
+   "type": "timeseries",
+   "title": "Zeilen pro Datei",
+   "description": "Wie viel jede Datei in /var/log schreibt. auth.log ist meist am grössten (Cron und SSH).",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 35
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (filename) (count_over_time({job=\"varlogs\"} [$__interval]))",
+     "queryType": "range",
+     "legendFormat": "{{filename}}"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 107,
+   "type": "timeseries",
+   "title": "SSH-Anmeldeversuche",
+   "description": "Fehlgeschlagene SSH-Anmeldungen über die Zeit.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 35
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(count_over_time({job=\"varlogs\", filename=\"/var/log/auth.log\"} |~ \"Failed password|Invalid user|authentication failure|Connection closed by authenticating user\" [$__interval]))",
+     "queryType": "range",
+     "legendFormat": "fehlgeschlagen"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "drawStyle": "bars",
+      "fillOpacity": 80,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom"
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 108,
+   "type": "logs",
+   "title": "Server-Logs (ohne Cron-Rauschen)",
+   "description": "Rohzeilen aus /var/log. Die Datei-Auswahl oben schränkt ein, Cron-Sitzungsmeldungen sind ausgeblendet.",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki-maxcluster"
+   },
+   "gridPos": {
+    "h": 12,
+    "w": 24,
+    "x": 0,
+    "y": 43
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{job=\"varlogs\", filename=~\"$datei\"} != \"pam_unix(cron:session)\" != \"CRON[\" |~ \"(?i)$suche\"",
+     "queryType": "range",
+     "maxLines": 500
+    }
+   ],
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none",
+    "prettifyLogMessage": false,
+    "showLabels": false
+   }
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "suche",
+    "label": "Suche in Log-Listen",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": ""
+    }
+   },
+   {
+    "name": "datei",
+    "label": "Server-Datei",
+    "type": "query",
+    "datasource": {
+     "type": "loki",
+     "uid": "loki-maxcluster"
+    },
+    "query": {
+     "label": "filename",
+     "refId": "A",
+     "stream": "{job=\"varlogs\"}",
+     "type": 1
+    },
+    "definition": "label_values({job=\"varlogs\"}, filename)",
+    "includeAll": true,
+    "multi": true,
+    "allValue": ".*",
+    "current": {
+     "selected": true,
+     "text": [
+      "All"
+     ],
+     "value": [
+      "$__all"
+     ]
+    },
+    "refresh": 2
+   }
+  ]
+ }
+}

@@ -1,0 +1,56 @@
+﻿{
+    "label":  "both-q8-swapped",
+    "date":  "2026-11-20T08:34:56",
+    "endpoint":  "http://127.0.0.1:11434",
+    "ollama":  "0.40.16",
+    "pcie":  "AI PRO R9700 Gen5 x16; RX 7800 XT Gen4 x16",
+    "duration_s":  328,
+    "results":  [
+                    {
+                        "model":  "qwen3.5:35b-a3b-q8_0",
+                        "test":  "load",
+                        "load_s":  41.54,
+                        "wall_s":  42.4,
+                        "vram_gb":  36.7
+                    },
+                    {
+                        "model":  "qwen3.5:35b-a3b-q8_0",
+                        "test":  "short",
+                        "prompt_tokens":  49,
+                        "gen_tokens":  135,
+                        "pp_tps":  384.5,
+                        "tg_tps":  91.5
+                    },
+                    {
+                        "model":  "qwen3.5:35b-a3b-q8_0",
+                        "test":  "long",
+                        "prompt_tokens":  23879,
+                        "gen_tokens":  128,
+                        "pp_tps":  4252.4,
+                        "tg_tps":  84.3
+                    },
+                    {
+                        "model":  "qwen3.8:27b-mtp-q8_0",
+                        "test":  "load",
+                        "load_s":  31.26,
+                        "wall_s":  31.91,
+                        "vram_gb":  30
+                    },
+                    {
+                        "model":  "qwen3.8:27b-mtp-q8_0",
+                        "test":  "short",
+                        "prompt_tokens":  50,
+                        "gen_tokens":  173,
+                        "pp_tps":  188.1,
+                        "tg_tps":  32
+                    },
+                    {
+                        "model":  "qwen3.8:27b-mtp-q8_0",
+                        "test":  "long",
+                        "prompt_tokens":  23877,
+                        "gen_tokens":  128,
+                        "pp_tps":  650.2,
+                        "tg_tps":  29.3
+                    }
+                ]
+}

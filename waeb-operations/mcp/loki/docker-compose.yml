@@ -1,0 +1,27 @@
+# Start: docker compose up -d --build
+# The SSH tunnel to Loki must be open on the host first (see README).
+services:
+  loki-mcp:
+    build: .
+    environment:
+      - LOKI_URL=${LOKI_URL:-http://host.docker.internal:3100}
+      - LOKI_MAX_LINES=${LOKI_MAX_LINES:-500}
+      - LOKI_MAX_RANGE_HOURS=${LOKI_MAX_RANGE_HOURS:-24}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8001:8000"   # only for checks from the host
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    ports:
+      - "127.0.0.1:3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    depends_on:
+      - loki-mcp
+    restart: unless-stopped
+
+volumes:
+  open-webui:

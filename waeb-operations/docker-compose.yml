@@ -1,0 +1,338 @@
+# Start: cp .env.example .env (fill in), then: docker compose up -d --build
+# Ports: Host-Ports sind verschoben, weil 3000 (Grafana), 3100 (lokales Loki) und 8001 auf diesem Rechner belegt sind.
+# Everything is read-only: SFTP user with "Nur lesender Zugriff", rclone serve http, loki-mcp GET only.
+services:
+  tunnel:
+    build: ./tunnel
+    environment:
+      - SSH_HOST=${SSH_HOST}
+      - SSH_USER=${SSH_USER}
+      - SSH_PORT=${SSH_PORT:-22}
+      - LOKI_REMOTE_PORT=${LOKI_REMOTE_PORT:-3100}
+      - MYSQL_REMOTE_HOST=${MYSQL_REMOTE_HOST:-127.0.0.1}
+      - MYSQL_REMOTE_PORT=${MYSQL_REMOTE_PORT:-3306}
+      - PROMETHEUS_REMOTE_PORT=${PROMETHEUS_REMOTE_PORT:-9090}
+    volumes:
+      - ${SSH_KEY_FILE}:/keys/id_key:ro
+      - ${SSH_KNOWN_HOSTS:-~/.ssh/known_hosts}:/keys/known_hosts:ro
+    # nur im Netz "proxy" mit eindeutigem Alias (ein zweites Netz ging bei Docker Desktop beim Neuerstellen verloren)
+    networks:
+      proxy:
+        aliases:
+          - waeb-ops-tunnel
+    ports:
+      - "127.0.0.1:${LOKI_HOST_PORT:-3110}:3100"   # Loki vom Host aus (curl): http://localhost:3110/ready
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3316}:3306"   # MySQL vom Host aus (z. B. DBeaver), nur mit Readonly-User verwenden
+      - "127.0.0.1:${PROMETHEUS_HOST_PORT:-9190}:9090"   # Prometheus vom Host aus: http://localhost:9190
+    restart: unless-stopped
+
+  files:
+    image: rclone/rclone:1.68.2
+    command: ["serve", "http", ":sftp:${SFTP_PATH:-}", "--addr", "0.0.0.0:8080", "--read-only"]
+    environment:
+      - RCLONE_SFTP_HOST=${SSH_HOST}
+      - RCLONE_SFTP_USER=${SSH_USER}
+      - RCLONE_SFTP_PORT=${SSH_PORT:-22}
+      - RCLONE_SFTP_KEY_FILE=/keys/id_key
+      - RCLONE_SFTP_KNOWN_HOSTS_FILE=/keys/known_hosts
+    volumes:
+      - ${SSH_KEY_FILE}:/keys/id_key:ro
+      - ${SSH_KNOWN_HOSTS:-~/.ssh/known_hosts}:/keys/known_hosts:ro
+    ports:
+      - "127.0.0.1:8080:8080"   # file browser: http://localhost:8080
+    restart: unless-stopped
+
+  # ======================================================================================
+  # MCP-Server, strikt getrennt nach Umgebung: jede Umgebung hat eigene Container,
+  # eigene Zugangsdaten und eigene Tool-IDs (…-prod / …-staging). Ein PROD-Modell in
+  # Open WebUI bekommt nur die PROD-Tools, ein STAGING-Modell nur die STAGING-Tools.
+  # Gemeinsam ist nur, was zum Server gehört: Server-Metriken (Prometheus).
+  # Alle MCPs sind nur im internen Netz erreichbar (kein Host-Port, keine Traefik-Route).
+  # ======================================================================================
+
+  # --- Logs (Loki): jede Instanz erlaubt nur ihre eigenen job-Werte ---
+  loki-mcp-prod:
+    build: ./mcp/loki
+    environment: &loki-env
+      LOKI_URL: http://waeb-ops-tunnel:3100
+      LOKI_MAX_LINES: ${LOKI_MAX_LINES:-500}
+      LOKI_MAX_RANGE_HOURS: ${LOKI_MAX_RANGE_HOURS:-24}
+      LOKI_ALLOWED_JOBS: shopware,varlogs
+    depends_on: [tunnel]
+    networks: {proxy: {aliases: [waeb-ops-loki-prod]}}
+    restart: unless-stopped
+
+  loki-mcp-staging:
+    build: ./mcp/loki
+    environment:
+      <<: *loki-env
+      LOKI_ALLOWED_JOBS: shopware_stage,varlogs
+    depends_on: [tunnel]
+    networks: {proxy: {aliases: [waeb-ops-loki-staging]}}
+    restart: unless-stopped
+
+  # --- Dateien (SFTP, nur lesen): jede Instanz sieht nur ihre Ordner plus die Server-Logs ---
+  files-mcp-prod:
+    build: ./mcp/files
+    environment: &files-env
+      SSH_HOST: ${SSH_HOST}
+      SSH_USER: ${SSH_USER}
+      SSH_PORT: ${SSH_PORT:-22}
+      SSH_KEY_FILE: /keys/id_key
+      SSH_KNOWN_HOSTS: /keys/known_hosts
+      FILES_ALLOWED_ROOTS: shopware.geschenkkoerbe.ch,logs
+    volumes: &ssh-keys
+      - ${SSH_KEY_FILE}:/keys/id_key:ro
+      - ${SSH_KNOWN_HOSTS:-~/.ssh/known_hosts}:/keys/known_hosts:ro
+    networks: {proxy: {aliases: [waeb-ops-files-prod]}}
+    restart: unless-stopped
+
+  files-mcp-staging:
+    build: ./mcp/files
+    environment:
+      <<: *files-env
+      FILES_ALLOWED_ROOTS: shopware-staging.geschenkkoerbe.ch,logs
+    volumes: *ssh-keys
+    networks: {proxy: {aliases: [waeb-ops-files-staging]}}
+    restart: unless-stopped
+
+  # --- MySQL (nur lesen): je Umgebung eigener Lese-User und genau eine Datenbank ---
+  mysql-mcp-prod:
+    build: ./mcp/mysql
+    environment:
+      MYSQL_HOST: waeb-ops-tunnel
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_PROD_USER:-}
+      MYSQL_PASSWORD: ${MYSQL_PROD_PASSWORD:-}
+      MYSQL_DATABASES: production=${MYSQL_PROD_DB:-}
+    depends_on: [tunnel]
+    networks: {proxy: {aliases: [waeb-ops-mysql-prod]}}
+    restart: unless-stopped
+
+  mysql-mcp-staging:
+    build: ./mcp/mysql
+    environment:
+      MYSQL_HOST: waeb-ops-tunnel
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_STAGING_USER:-}
+      MYSQL_PASSWORD: ${MYSQL_STAGING_PASSWORD:-}
+      MYSQL_DATABASES: staging=${MYSQL_STAGING_DB:-}
+    depends_on: [tunnel]
+    networks: {proxy: {aliases: [waeb-ops-mysql-staging]}}
+    restart: unless-stopped
+
+  # --- Shopware Admin API (admin-mcp hinter mcpo, davor limit-proxy mit shopware_search) ---
+  shopware-mcp-prod:
+    image: ghcr.io/open-webui/mcpo:main
+    environment:
+      SHOPWARE_API_URL: ${SHOPWARE_PROD_URL:?SHOPWARE_PROD_URL setzen}
+      SHOPWARE_API_CLIENT_ID: ${SHOPWARE_PROD_CLIENT_ID:?SHOPWARE_PROD_CLIENT_ID setzen}
+      SHOPWARE_API_CLIENT_SECRET: ${SHOPWARE_PROD_CLIENT_SECRET:?SHOPWARE_PROD_CLIENT_SECRET setzen}
+      MCPO_KEY: ${MCPO_PROD_KEY:?MCPO_PROD_KEY setzen}
+      # PROD nur lesend: schreibende Shopware-Tools sind ausgeblendet und gesperrt
+      SHOPWARE_READONLY: ${SHOPWARE_PROD_READONLY:-true}
+      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-100000}
+    entrypoint: ["/bin/sh", "-c"]
+    command: &mcpo-cmd
+      - |
+        mcpo --host 127.0.0.1 --port 8001 --api-key "$$MCPO_KEY" -- npx -y @shopware-ag/admin-mcp@0.1.1 &
+        exec python /limit-proxy.py
+    volumes: &mcpo-vols
+      - npm-cache:/root/.npm
+      - ./mcp/shopware/limit-proxy.py:/limit-proxy.py:ro
+    networks: {proxy: {aliases: [waeb-ops-shopware-prod]}}
+    restart: unless-stopped
+
+  shopware-mcp-staging:
+    image: ghcr.io/open-webui/mcpo:main
+    environment:
+      SHOPWARE_API_URL: ${SHOPWARE_STAGING_URL:?SHOPWARE_STAGING_URL setzen}
+      SHOPWARE_API_CLIENT_ID: ${SHOPWARE_STAGING_CLIENT_ID:?SHOPWARE_STAGING_CLIENT_ID setzen}
+      SHOPWARE_API_CLIENT_SECRET: ${SHOPWARE_STAGING_CLIENT_SECRET:?SHOPWARE_STAGING_CLIENT_SECRET setzen}
+      MCPO_KEY: ${MCPO_STAGING_KEY:?MCPO_STAGING_KEY setzen}
+      SHOPWARE_READONLY: ${SHOPWARE_STAGING_READONLY:-false}
+      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-100000}
+    entrypoint: ["/bin/sh", "-c"]
+    command: *mcpo-cmd
+    volumes: *mcpo-vols
+    networks: {proxy: {aliases: [waeb-ops-shopware-staging]}}
+    restart: unless-stopped
+
+  # --- Server (gemeinsam für beide Umgebungen): Prometheus-Metriken, nur lesend ---
+  metrics-mcp:
+    build: ./mcp/metrics
+    environment:
+      - PROMETHEUS_URL=http://waeb-ops-tunnel:9090
+    depends_on: [tunnel]
+    networks: {proxy: {aliases: [waeb-ops-metrics]}}
+    restart: unless-stopped
+
+  # ======================================================================================
+  # Open WebUI: eine eigene Instanz pro Umgebung (eigene Domain, eigene Chats/Benutzer).
+  # Jede Instanz kennt nur die Tool-Server ihrer Umgebung (+ Server-Metriken).
+  # ======================================================================================
+  open-webui-prod:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
+    environment:
+      - WEBUI_NAME=WAEB PROD
+      - WEBUI_URL=https://${WAEB_PROD_HOST:-waeb-operations.oryn.brandadrian.com}
+      - CORS_ALLOW_ORIGIN=https://${WAEB_PROD_HOST:-waeb-operations.oryn.brandadrian.com};http://localhost:${WEBUI_PROD_HOST_PORT:-3010}
+      - WEBUI_SECRET_KEY=${WEBUI_PROD_SECRET_KEY:?WEBUI_PROD_SECRET_KEY setzen}
+      - WEBUI_AUTH=true
+      - WEBUI_ADMIN_EMAIL=${WEBUI_ADMIN_EMAIL}
+      - WEBUI_ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD}
+      - WEBUI_ADMIN_NAME=${WEBUI_ADMIN_NAME:-Admin}
+      - ENABLE_SIGNUP=false
+      - ENABLE_PERSISTENT_CONFIG=false
+      # Modelle über die Oryn-API mit Key; angeboten nur die drei Basismodelle (ausgeblendet, siehe models.json)
+      - ENABLE_OPENAI_API=true
+      - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen}
+      - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen}
+      - ENABLE_OLLAMA_API=false
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k"}]}}'
+      - DEFAULT_MODELS=prod-shop
+      - DEFAULT_PINNED_MODELS=prod-shop,prod-technik
+      # Nur die Tool-Server dieser Umgebung
+      - 'TOOL_SERVER_CONNECTIONS=[{"type":"openapi","url":"http://waeb-ops-shopware-prod:8000","path":"openapi.json","auth_type":"bearer","key":"${MCPO_PROD_KEY}","config":{"enable":true},"info":{"id":"shopware-prod","name":"Shopware PROD","description":"Shopware Admin API www.geschenkkoerbe.ch (nur lesen)"}},{"type":"mcp","url":"http://waeb-ops-loki-prod:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"loki-prod","name":"Logs PROD","description":"Logs Production-Shop und Server"}},{"type":"mcp","url":"http://waeb-ops-files-prod:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"files-prod","name":"Dateien PROD","description":"Dateien unter shopware.geschenkkoerbe.ch und logs (nur lesen)"}},{"type":"mcp","url":"http://waeb-ops-mysql-prod:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"mysql-prod","name":"MySQL PROD","description":"Lesende SQL-Abfragen auf die Production-Datenbank"}},{"type":"mcp","url":"http://waeb-ops-metrics:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"metrics","name":"Server-Metriken","description":"CPU, RAM, Disk und Netzwerk des Servers (nur lesen)"}}]'
+      - 'DEFAULT_MODEL_METADATA={"toolIds":["server:shopware-prod","server:mcp:loki-prod","server:mcp:files-prod","server:mcp:mysql-prod","server:mcp:metrics"]}'
+      - 'DEFAULT_MODEL_PARAMS={"function_calling":"native"}'
+    ports:
+      - "127.0.0.1:${WEBUI_PROD_HOST_PORT:-3010}:8080"   # lokal: http://localhost:3010
+    volumes:
+      - open-webui:/app/backend/data
+      - ./openwebui/skills:/skills:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.waeb-prod.rule=Host(`${WAEB_PROD_HOST:-waeb-operations.oryn.brandadrian.com}`)
+      - traefik.http.routers.waeb-prod.entrypoints=websecure
+      - traefik.http.routers.waeb-prod.tls.certresolver=le
+      - traefik.http.routers.waeb-prod.service=waeb-prod
+      - traefik.http.services.waeb-prod.loadbalancer.server.port=8080
+    networks:
+      proxy:
+        aliases:
+          - waeb-ops-webui-prod
+    depends_on: [loki-mcp-prod, files-mcp-prod, mysql-mcp-prod, shopware-mcp-prod, metrics-mcp]
+    restart: unless-stopped
+
+  # Spielt Modelle (models.json, nur Umgebung PROD) und Skills in die PROD-Instanz ein
+  setup-prod:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
+    restart: "no"
+    depends_on: [open-webui-prod]
+    entrypoint: ["python3", "/setup.py"]
+    environment:
+      - WEBUI_INTERNAL_URL=http://waeb-ops-webui-prod:8080
+      - ADMIN_EMAIL=${WEBUI_ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD}
+      - UMGEBUNG=prod
+    volumes:
+      - ./openwebui/setup.py:/setup.py:ro
+      - ./openwebui/models.json:/models.json:ro
+      - ./openwebui/skills:/skills:ro
+    networks:
+      - proxy
+
+  open-webui-staging:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
+    environment:
+      - WEBUI_NAME=WAEB STAGING
+      - WEBUI_URL=https://${WAEB_STAGING_HOST:-waeb-operations-staging.oryn.brandadrian.com}
+      - CORS_ALLOW_ORIGIN=https://${WAEB_STAGING_HOST:-waeb-operations-staging.oryn.brandadrian.com};http://localhost:${WEBUI_STAGING_HOST_PORT:-3011}
+      - WEBUI_SECRET_KEY=${WEBUI_STAGING_SECRET_KEY:?WEBUI_STAGING_SECRET_KEY setzen}
+      - WEBUI_AUTH=true
+      - WEBUI_ADMIN_EMAIL=${WEBUI_ADMIN_EMAIL}
+      - WEBUI_ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD}
+      - WEBUI_ADMIN_NAME=${WEBUI_ADMIN_NAME:-Admin}
+      - ENABLE_SIGNUP=false
+      - ENABLE_PERSISTENT_CONFIG=false
+      # Modelle über die Oryn-API mit Key; angeboten nur die drei Basismodelle (ausgeblendet, siehe models.json)
+      - ENABLE_OPENAI_API=true
+      - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen}
+      - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen}
+      - ENABLE_OLLAMA_API=false
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k"}]}}'
+      - DEFAULT_MODELS=staging-shop
+      - DEFAULT_PINNED_MODELS=staging-shop,staging-technik
+      # Nur die Tool-Server dieser Umgebung
+      - 'TOOL_SERVER_CONNECTIONS=[{"type":"openapi","url":"http://waeb-ops-shopware-staging:8000","path":"openapi.json","auth_type":"bearer","key":"${MCPO_STAGING_KEY}","config":{"enable":true},"info":{"id":"shopware-staging","name":"Shopware STAGING","description":"Shopware Admin API shopware-staging.geschenkkoerbe.ch"}},{"type":"mcp","url":"http://waeb-ops-loki-staging:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"loki-staging","name":"Logs STAGING","description":"Logs Staging-Shop und Server"}},{"type":"mcp","url":"http://waeb-ops-files-staging:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"files-staging","name":"Dateien STAGING","description":"Dateien unter shopware-staging.geschenkkoerbe.ch und logs (nur lesen)"}},{"type":"mcp","url":"http://waeb-ops-mysql-staging:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"mysql-staging","name":"MySQL STAGING","description":"Lesende SQL-Abfragen auf die Staging-Datenbank"}},{"type":"mcp","url":"http://waeb-ops-metrics:8000/mcp","path":"","auth_type":"none","key":"","config":{"enable":true},"info":{"id":"metrics","name":"Server-Metriken","description":"CPU, RAM, Disk und Netzwerk des Servers (nur lesen)"}}]'
+      - 'DEFAULT_MODEL_METADATA={"toolIds":["server:shopware-staging","server:mcp:loki-staging","server:mcp:files-staging","server:mcp:mysql-staging","server:mcp:metrics"]}'
+      - 'DEFAULT_MODEL_PARAMS={"function_calling":"native"}'
+    ports:
+      - "127.0.0.1:${WEBUI_STAGING_HOST_PORT:-3011}:8080"   # lokal: http://localhost:3011
+    volumes:
+      - open-webui-staging:/app/backend/data
+      - ./openwebui/skills:/skills:ro
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.waeb-staging.rule=Host(`${WAEB_STAGING_HOST:-waeb-operations-staging.oryn.brandadrian.com}`)
+      - traefik.http.routers.waeb-staging.entrypoints=websecure
+      - traefik.http.routers.waeb-staging.tls.certresolver=le
+      - traefik.http.routers.waeb-staging.service=waeb-staging
+      - traefik.http.services.waeb-staging.loadbalancer.server.port=8080
+    networks:
+      proxy:
+        aliases:
+          - waeb-ops-webui-staging
+    depends_on: [loki-mcp-staging, files-mcp-staging, mysql-mcp-staging, shopware-mcp-staging, metrics-mcp]
+    restart: unless-stopped
+
+  # Spielt Modelle (models.json, nur Umgebung STAGING) und Skills in die STAGING-Instanz ein
+  setup-staging:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
+    restart: "no"
+    depends_on: [open-webui-staging]
+    entrypoint: ["python3", "/setup.py"]
+    environment:
+      - WEBUI_INTERNAL_URL=http://waeb-ops-webui-staging:8080
+      - ADMIN_EMAIL=${WEBUI_ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD}
+      - UMGEBUNG=staging
+    volumes:
+      - ./openwebui/setup.py:/setup.py:ro
+      - ./openwebui/models.json:/models.json:ro
+      - ./openwebui/skills:/skills:ro
+    networks:
+      - proxy
+
+  # Log-Dashboard (Production, Staging, Server) – eigenes Grafana mit Login, NICHT das öffentliche Oryn-Grafana
+  # (dort ist anonymer Zugriff an; Server-Logs gehören nicht dorthin). Nur lokal erreichbar.
+  grafana:
+    image: grafana/grafana:13.3.0
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD setzen}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/prod-logs.json
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      proxy:
+        aliases:
+          - waeb-ops-grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_HOST_PORT:-3020}:3000"   # http://localhost:3020
+    depends_on:
+      - tunnel
+    restart: unless-stopped
+
+volumes:
+  open-webui:
+  open-webui-staging:
+  grafana:
+  npm-cache:
+
+networks:
+  proxy:
+    external: true

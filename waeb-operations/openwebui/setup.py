@@ -54,7 +54,8 @@ cfg = json.load(open("/models.json", encoding="utf-8"))
 for base in cfg["basismodelle"]:
     upsert({"id": base, "base_model_id": None, "name": base,
             "meta": {"hidden": True, "toolIds": [], "description": "Basismodell ohne Tools (ausgeblendet)", "capabilities": {}},
-            "params": {}, "access_grants": [], "is_active": True})
+            # Task-Modell (9B): ohne Denkphase, sonst braucht ein Titel 20 s statt unter 1 s
+            "params": {"reasoning_effort": "none"} if base == "qwen3.5:9b" else {}, "access_grants": [], "is_active": True})
 UMGEBUNG = os.environ.get("UMGEBUNG", "")  # jede Instanz bekommt nur die Modelle ihrer Umgebung
 for env_key, env in cfg["umgebungen"].items():
     if UMGEBUNG and env_key != UMGEBUNG:

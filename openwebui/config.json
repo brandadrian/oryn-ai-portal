@@ -16,41 +16,6 @@
     "BRAVE_SEARCH_API_KEY": "${BRAVE_SEARCH_API_KEY}"
   },
 
-  "bilder": {
-    "_hinweis": "ComfyUI läuft nativ auf dem PC (scripts/comfyui.ps1, R9700, Port 8188). Workflows im API-Format liegen in comfyui/, setup.py setzt sie als workflow/edit_workflow ein.",
-    "ENABLE_IMAGE_GENERATION": true,
-    "ENABLE_IMAGE_EDIT": true,
-    "ENABLE_IMAGE_PROMPT_GENERATION": false,
-    "IMAGE_GENERATION_DEFAULT_MODEL": "comfyui:qwen_image_2.1_turbo_int8_convrot.safetensors",
-    "IMAGE_EDIT_DEFAULT_MODEL": "comfyui:qwen_image_2.1_turbo_int8_convrot.safetensors",
-    "verbindungen": [
-      {
-        "id": "comfyui", "name": "ComfyUI · Qwen-Image 2.1 Turbo", "type": "comfyui",
-        "url": "http://host.docker.internal:8188", "key": "",
-        "config": {
-          "enable": true, "auth_type": "none", "size": "1024x1024",
-          "model_ids": ["qwen_image_2.1_turbo_int8_convrot.safetensors"],
-          "workflow_datei": "qwen-image-2.1-turbo-t2i.json",
-          "nodes": [
-            {"type": "prompt", "key": "prompt", "node_ids": ["5"]},
-            {"type": "model", "key": "unet_name", "node_ids": ["1"]},
-            {"type": "width", "key": "width", "node_ids": ["4"]},
-            {"type": "height", "key": "height", "node_ids": ["4"]},
-            {"type": "n", "key": "batch_size", "node_ids": ["4"]},
-            {"type": "seed", "key": "noise_seed", "node_ids": ["10"]}
-          ],
-          "edit_workflow_datei": "qwen-image-2.1-turbo-edit.json",
-          "edit_nodes": [
-            {"type": "prompt", "key": "prompt", "node_ids": ["5"]},
-            {"type": "model", "key": "unet_name", "node_ids": ["1"]},
-            {"type": "image", "key": "image", "node_ids": ["14"]},
-            {"type": "seed", "key": "noise_seed", "node_ids": ["10"]}
-          ]
-        }
-      }
-    ]
-  },
-
   "dokumente": {
     "_hinweis": "PDFs: Bilder in PDFs (Scans) per OCR (rapidocr) mit auslesen. Gilt global für alle Datei-Uploads.",
     "PDF_EXTRACT_IMAGES": true
@@ -106,7 +71,6 @@
       "features": ["web_search"],
       "capabilities": {"vision": true, "file_upload": true, "web_search": true, "image_generation": true, "video_generation": true, "code_interpreter": true, "terminal": true, "citations": true, "status_updates": true, "memory": true, "builtin_tools": true}
     },
-    {"id": "bilder-memes", "basis": "qwen3.8:27b-q4-256k", "name": "Bilder & Memes", "description": "Erstellt Bilder und Memes mit Qwen-Image 2.1 (ComfyUI), auch mit deutschem Text im Bild. Bild anhängen = bearbeiten (Text ändern, Dinge hinzufügen). Bildgenerierung ist standardmässig an, ca. 20 s pro Bild auf der R9700.", "tools": [], "features": ["image_generation"], "capabilities": {"vision": true, "file_upload": true, "image_generation": true, "citations": false, "status_updates": true, "builtin_tools": true}, "system": "Du erstellst Bilder und Memes mit dem Werkzeug zur Bildgenerierung (Qwen-Image 2.1).\n- Schreib den Bild-Prompt als ausführliche Beschreibung des fertigen Bildes: Motiv, Stil, Licht, Bildaufbau.\n- Text im Bild immer wörtlich in Anführungszeichen, mit Position und Schrift, z.B. oben in weisser Impact-Schrift mit schwarzem Rand: \"TEXT\". Der Text im Bild bleibt in der Sprache, die der Benutzer will (meist Deutsch, Umlaute sind ok).\n- Für Memes: kurze, pointierte Zeilen oben und unten, klassischer Meme-Look, ausser der Benutzer will etwas anderes.\n- Hat der Benutzer ein Bild angehängt und will es ändern, nutze das Werkzeug zum Bearbeiten und beschreibe nur die Änderung.\n- Ohne klaren Wunsch: mach einen Vorschlag und erzeuge direkt ein Bild, statt lange nachzufragen.\nAntworte auf Deutsch und kurz, das Bild spricht für sich."},
     {"id": "dokumente", "basis": "qwen3-vl:32b-instruct", "name": "Dokumente", "description": "Liest PDFs, Scans, Fotos von Belegen und Screenshots genau aus: Felder, Tabellen, Beträge, Zusammenfassungen. Scans am besten als Bild/Screenshot anhängen, PDFs mit Text gehen direkt. Läuft auf der R9700 und verdrängt dort das grosse Chat-Modell.", "tools": [], "features": [], "params": {"num_ctx": 32768, "temperature": 0.1, "use_mmap": false}, "capabilities": {"vision": true, "file_upload": true, "citations": true, "status_updates": true, "builtin_tools": false}, "system": "Du liest Dokumente aus: PDFs, Scans, Fotos von Belegen und Screenshots.\n- Gib nur wieder, was wirklich im Dokument steht. Erfinde nichts. Unleserliches markierst du mit [unleserlich].\n- Beträge, Daten und Nummern (IBAN, Rechnungs-, Kunden-, Bestellnummern) zeichengenau übernehmen.\n- Tabellen als Markdown-Tabelle, Formularfelder als Liste 'Feld: Wert'. Will der Benutzer ein Format (z.B. JSON), halte es genau ein.\n- Bei mehreren Seiten oder Dokumenten sag, woher eine Angabe stammt.\nAntworte auf Deutsch, knapp und strukturiert."}
   ]
 }

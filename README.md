@@ -79,7 +79,6 @@ api/             nginx (API-Key-Prüfung) + meter (Mess-Proxy, Node)        → 
 models/          Modelfiles der eigenen Modelle                            → docs/models.md
 monitoring/      Prometheus, Loki, Grafana (Dashboards, Daten in data/)    → docs/monitoring.md
 scripts/         ollama-gpu.ps1: Ollama-Karten umschalten (beide / nur R9700 / nur RX 7800 XT / ROCm) → docs/models.md
-                 comfyui.ps1: ComfyUI ohne Fenster für Bilder in Open WebUI (RX 7800 XT, Port 8188) → openwebui/README.md
 ollama-monitor/  OllamaMonitor (.NET 10, ollama-monitor.slnx): Windows-Dienst für Hardware + Ollama-Metriken,
                  Dockerfile für den optionalen Container (ohne Hardware-Werte)
 openwebui/       Open WebUI: Chat und Modellverwaltung mit Login             → docs/openwebui.md

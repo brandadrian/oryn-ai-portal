@@ -1,57 +1,109 @@
 ---
 name: dotnet-create-solution
-description: Create a simple .NET solution with the project structure and documentation conventions.
+description: Create a simple .NET solution with a clean project structure and documentation conventions.
 ---
 
 # Create a .NET solution
 
-Use the requested product name. Choose the host template for the requested
-application, such as a console app, web API, or worker.
+Use the requested product name. Choose the appropriate host template, such as console, web API, worker, or MCP server.
+
+## Structure
 
 ```text
 <repository-name>/
   src/
     <Product>.sln or <Product>.slnx
-    <Product>/               Host
-    <Product>.Core/          Logic, models, interfaces
-    <Product>.<Adapter>/     One project per external system, when needed
+    <Product>.Api/             API
+    <Product>.Core/            Logic, models, interfaces
+    <Product>.Data/            Database, repositories, migrations
+    <Product>.Contracts/       DTOs, requests, responses
+    <Product>.Shared/          Common utilities and extensions
+    <Product>.Adapters.<Name>/ External integrations and for example external APIs
+
   tests/
     <Product>.Tests/
-  files/                     File-based configuration, inputs, outputs, when needed
+
+  files/                       Configuration, inputs, outputs
   docs/
   .gitignore
   README.md
 ```
 
-Use a kebab-case repository name and PascalCase product and project names.
-Keep tests outside `src`. The host references Core and any adapters; adapters
-reference Core. Core must not depend on adapters. Add adapters only when needed.
+Use kebab-case for the repository name and PascalCase for product and project names.
 
-For example, create a console application named `MyProduct`:
+Keep tests outside `src`.
+
+## Responsibilities
+
+- **Api:** REST endpoints, MCP endpoints, authentication, startup, dependency injection.
+- **Core:** Application logic, business rules, models, interfaces, workers.
+- **Data:** Application database access, EF Core/Dapper, repositories, migrations.
+- **Contracts:** Shared DTOs, API requests, responses, and message contracts.
+- **Shared:** Reusable technical helpers, extensions, and constants.
+- **Adapters:** External systems such as Jira, Ollama, Loki, MySQL, and MCP tools.
+
+REST and MCP endpoints may share the same API host. Separate them only when independent deployment is needed.
+
+## Dependencies
+
+- Host references Core and required projects.
+- Data references Core.
+- Adapters reference Core.
+- Core must not depend on Host, Data, or Adapters.
+- Contracts and Shared should remain independent.
+- Avoid circular dependencies and unnecessary references.
+
+Only create Data, Contracts, Shared, and Adapters when needed.
+
+## Example
+
+Create a web API named `MyProduct`:
 
 ```powershell
 dotnet new sln -n MyProduct -o src
-dotnet new console -n MyProduct -o src\MyProduct
-dotnet new classlib -n MyProduct.Core -o src\MyProduct.Core
-dotnet new xunit -n MyProduct.Tests -o tests\MyProduct.Tests
-dotnet add src\MyProduct\MyProduct.csproj reference src\MyProduct.Core\MyProduct.Core.csproj
-dotnet add tests\MyProduct.Tests\MyProduct.Tests.csproj reference src\MyProduct.Core\MyProduct.Core.csproj
+dotnet new webapi -n MyProduct.Api -o src/MyProduct.Api
+dotnet new classlib -n MyProduct.Core -o src/MyProduct.Core
+dotnet new xunit -n MyProduct.Tests -o tests/MyProduct.Tests
+
+dotnet add src/MyProduct.Api/MyProduct.Api.csproj reference src/MyProduct.Core/MyProduct.Core.csproj
+dotnet add tests/MyProduct.Tests/MyProduct.Tests.csproj reference src/MyProduct.Core/MyProduct.Core.csproj
+
 cd src
-dotnet sln add MyProduct\MyProduct.csproj MyProduct.Core\MyProduct.Core.csproj ..\tests\MyProduct.Tests\MyProduct.Tests.csproj
+dotnet sln add MyProduct.Api/MyProduct.Api.csproj MyProduct.Core/MyProduct.Core.csproj ../tests/MyProduct.Tests/MyProduct.Tests.csproj
+
 dotnet build
 dotnet test
 ```
 
-The solution extension depends on the installed .NET SDK. Use another host
-template when appropriate. Keep the host focused on startup and input/output;
-put application logic in Core.
+Add optional projects and their references only when needed.
 
-Create a root README and `docs` using the
-[software-documentation skill](../software-documentation/SKILL.md).
-Ignore `bin`, `obj`, `logs`, `data`, and local settings. If configuration is
-needed, commit an `appsettings.example.json` with placeholders, document its
-settings, and keep local settings out of Git.
+The solution extension depends on the installed .NET SDK. Use another host template when appropriate.
 
-Keep technical logs separate from data output. Use
-`timestamp;loglevel;message`, with `command`, execution `id`, and `event`
-fields in the message. Never log secrets or full payloads.
+## Documentation
+
+Create a root README and `docs` using the [software-documentation skill](../software-documentation/SKILL.md).
+
+Document setup, configuration, architecture, and usage.
+
+## Configuration
+
+Ignore `bin`, `obj`, `logs`, `data`, and local settings.
+
+If configuration is needed, provide `appsettings.example.json` with placeholders. Never commit secrets.
+
+## Logging
+
+Keep technical logs separate from data output.
+
+Use `timestamp;loglevel;message`, including `command`, execution `id`, and `event` when applicable.
+
+Never log secrets or full sensitive payloads.
+
+## Principles
+
+- Keep it simple.
+- One clear responsibility per project.
+- No unnecessary abstractions.
+- No circular dependencies.
+- Add projects only when needed.
+- Keep Core independent of infrastructure.

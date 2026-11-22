@@ -1,7 +1,6 @@
 """Einrichtung nach dem Start von Open WebUI (Dienst "setup"). Spielt config.json ein:
 Ollama-Verbindungen, Websuche, Tool-Server, Task-Modell, Standardmodell/Reihenfolge, Favoriten des Admins,
-Namen/Beschreibungen der Basismodelle, eigene Workspace-Modelle (Tools, Websuche, Bildgenerierung standardmässig an),
-Bild-Engine (ComfyUI, Workflows aus comfyui/) und PDF-Einstellungen.
+Namen/Beschreibungen der Basismodelle, eigene Workspace-Modelle (Tools und Websuche standardmässig an) und PDF-Einstellungen.
 ${NAME} in config.json wird durch die Umgebungsvariable NAME (aus .env) ersetzt."""
 import json
 import os
@@ -77,23 +76,6 @@ report("Websuche", *call("/api/v1/retrieval/config/update", {"web": cfg["websuch
 # 2b. PDF-Auslese (OCR für Scans)
 report("Dokumente", *call("/api/v1/retrieval/config/update",
                           {k: v for k, v in cfg["dokumente"].items() if not k.startswith("_")}, token))
-
-# 2c. Bildgenerierung: ComfyUI-Verbindung, Workflows aus Dateien (API-Format) einlesen
-b = cfg["bilder"]
-connections = []
-for c in b["verbindungen"]:
-    c = json.loads(json.dumps(c))
-    for key in ("workflow", "edit_workflow"):
-        datei = c["config"].pop(key + "_datei", None)
-        if datei:
-            c["config"][key] = open("/comfyui/" + datei, encoding="utf-8").read()
-    connections.append(c)
-status, images = call("/api/v1/images/config", token=token)
-if status == 200:
-    images.update({k: v for k, v in b.items() if k.isupper()})
-    images["IMAGE_CONNECTIONS"] = connections
-    status, images = call("/api/v1/images/config/update", images, token)
-report("Bildgenerierung", status, images)
 
 # 3. Tool-Server
 report("Tool-Server", *call("/api/v1/configs/tool_servers", {"TOOL_SERVER_CONNECTIONS": cfg["tool_server"]}, token))

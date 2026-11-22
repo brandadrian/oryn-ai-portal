@@ -8,6 +8,11 @@ import { z } from "zod";
 
 const LOKI_URL = (process.env.LOKI_URL ?? "http://localhost:3100").replace(/\/$/, "");
 const MAX_LINES = Number(process.env.LOKI_MAX_LINES ?? 500);
+// Obergrenze für die Antwort an das Modell (Zeichen). Grosse Tool-Antworten sprengen sonst den Kontext
+// (Ollama schneidet dann den Anfang samt Systemprompt ab). Lieber klar kürzen und sagen, wie man eingrenzt.
+const MAX_CHARS = Number(process.env.LOKI_MAX_CHARS ?? 30000);
+const MAX_LINE_CHARS = Number(process.env.LOKI_MAX_LINE_CHARS ?? 500);
+const MAX_POINTS = 48; // Metrik-Abfragen: höchstens so viele Zeitpunkte pro Serie
 const MAX_RANGE_HOURS = Number(process.env.LOKI_MAX_RANGE_HOURS ?? 24);
 const TIMEOUT_MS = Number(process.env.LOKI_TIMEOUT_MS ?? 15000);
 // Optional: nur diese job-Werte erlauben (Trennung PROD/STAGING), z. B. "shopware,varlogs".
@@ -87,27 +92,63 @@ server.registerTool(
     if (Number.isNaN(startMs) || Number.isNaN(endMs)) throw new Error("Invalid start or end time");
     startMs = Math.max(startMs, endMs - MAX_RANGE_HOURS * 3_600_000);
 
-    const json = await lokiGet("/loki/api/v1/query_range", {
+    // Metrik-Abfragen (count_over_time, rate …): Schrittweite so wählen, dass höchstens MAX_POINTS Punkte entstehen
+    const isMetric = !/^\s*\{[^}]*\}\s*(\|[^\[]*)?$/.test(query) && /\[[0-9]+[smhd]\]/.test(query);
+    const params: Record<string, string> = {
       query,
       start: toNs(startMs),
       end: toNs(endMs),
       limit: String(Math.min(limit ?? 100, MAX_LINES)),
       direction: direction ?? "backward",
-    });
+    };
+    if (isMetric) params.step = `${Math.max(60, Math.ceil((endMs - startMs) / 1000 / MAX_POINTS))}s`;
+    const json = await lokiGet("/loki/api/v1/query_range", params);
 
     const { resultType, result } = json.data ?? {};
+    const out: string[] = [];
+    let used = 0, shown = 0, total = 0;
+    const push = (l: string) => { if (used + l.length + 1 > MAX_CHARS) return false; out.push(l); used += l.length + 1; return true; };
+    const fmtTs = (ns: string) => new Date(Number(BigInt(ns) / 1_000_000n)).toISOString().replace(/\.\d+Z$/, "Z");
+
     if (resultType === "streams") {
-      const lines: string[] = [];
-      for (const s of result) {
-        const labels = Object.entries(s.stream).map(([k, v]) => `${k}="${v}"`).join(",");
+      // Labels nur einmal pro Datei/Stream, nicht in jeder Zeile
+      for (const s of result) total += s.values.length;
+      outer: for (const s of result) {
+        const labels = Object.entries(s.stream).filter(([k]) => !["service_name", "detected_level"].includes(k))
+          .map(([k, v]) => `${k}="${v}"`).join(", ");
+        if (!push(`--- {${labels}}`)) break;
         for (const [ts, line] of s.values) {
-          lines.push(`${new Date(Number(BigInt(ts) / 1_000_000n)).toISOString()} {${labels}} ${line}`);
+          const l = String(line);
+          if (!push(`${fmtTs(ts)} ${l.length > MAX_LINE_CHARS ? l.slice(0, MAX_LINE_CHARS) + " …" : l}`)) break outer;
+          shown++;
         }
       }
-      return text(lines.join("\n") || "(no log lines)");
+      if (!total) return text("(keine Log-Zeilen)");
+      const note = shown < total
+        ? `\n[${shown} von ${total} Zeilen gezeigt – Antwort auf ${MAX_CHARS} Zeichen begrenzt. Für mehr: Zeitraum verkürzen, nach Kanal/Datei/Text filtern oder zuerst mit count_over_time zählen.]`
+        : `\n[${total} Zeilen]`;
+      return text(out.join("\n") + note);
     }
-    // Metric queries (e.g. count_over_time) return matrix data.
-    return text(JSON.stringify(result, null, 2));
+
+    // Metrik-Abfragen: pro Serie Summe, Maximum, letzter Wert und die Punkte ungleich 0 (kompakt)
+    const series = (result ?? []) as Array<{ metric: Record<string, string>; values?: [number, string][]; value?: [number, string] }>;
+    if (!series.length) return text("(keine Daten)");
+    const rows = series.map((r) => {
+      const vals = (r.values ?? (r.value ? [r.value] : [])).map(([t, v]) => [t, Number(v)] as [number, number]);
+      const sum = vals.reduce((a, [, v]) => a + v, 0);
+      return { r, vals, sum, max: Math.max(...vals.map(([, v]) => v)) };
+    }).sort((a, b) => b.max - a.max);
+    push(`${rows.length} Serien, ein Wert pro ${params.step ?? "Schritt"}, sortiert nach Höchstwert (Werte = Ergebnis der Abfrage zu diesem Zeitpunkt):`);
+    let shownSeries = 0;
+    for (const { r, vals, max } of rows) {
+      const labels = Object.entries(r.metric).filter(([k]) => !["service_name", "detected_level"].includes(k))
+        .map(([k, v]) => `${k}="${v}"`).join(", ");
+      const pts = vals.filter(([, v]) => v !== 0).map(([t, v]) => `${new Date(t * 1000).toISOString().slice(11, 16)}=${+v.toFixed(3)}`).join(" ");
+      if (!push(`{${labels}} max=${+max.toFixed(3)} zuletzt=${+(vals.at(-1)?.[1] ?? 0).toFixed(3)}${pts ? " | " + pts : ""}`)) break;
+      shownSeries++;
+    }
+    if (shownSeries < rows.length) out.push(`[${shownSeries} von ${rows.length} Serien gezeigt – Antwort begrenzt. Mit sum by (…) oder topk(…) zusammenfassen.]`);
+    return text(out.join("\n"));
   },
 );
 

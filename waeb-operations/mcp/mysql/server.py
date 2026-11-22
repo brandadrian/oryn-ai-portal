@@ -23,9 +23,11 @@ DATABASES = dict(
     (k.strip(), v.strip())
     for k, v in (p.split("=", 1) for p in os.environ.get("MYSQL_DATABASES", "").split(",") if "=" in p)
 )
+ENV_NAME = next(iter(DATABASES), "")
 MAX_ROWS = int(os.environ.get("MYSQL_MAX_ROWS", "500"))
 TIMEOUT_MS = int(os.environ.get("MYSQL_TIMEOUT_MS", "30000"))
-MAX_CELL = int(os.environ.get("MYSQL_MAX_CELL_CHARS", "500"))
+MAX_CELL = int(os.environ.get("MYSQL_MAX_CELL_CHARS", "300"))
+MAX_CHARS = int(os.environ.get("MYSQL_MAX_CHARS", "30000"))
 
 ALLOWED = re.compile(r"^\s*(select|with|show|describe|desc|explain)\b", re.IGNORECASE)
 # Auch innerhalb erlaubter Anweisungen verboten (z. B. SELECT ... INTO OUTFILE, FOR UPDATE)
@@ -106,8 +108,18 @@ def _table(cols, rows, limit) -> str:
     if not cols:
         return "(keine Spalten)"
     out = ["| " + " | ".join(cols) + " |", "|" + "---|" * len(cols)]
-    out += ["| " + " | ".join(_cell(v) for v in r) + " |" for r in rows]
-    out.append(f"\n{len(rows)} Zeilen" + (f" (Limit {limit} erreicht, weitere Zeilen nicht geladen; mit WHERE/LIMIT eingrenzen)" if more else ""))
+    used, shown = sum(len(x) for x in out), 0
+    for r in rows:
+        line = "| " + " | ".join(_cell(v) for v in r) + " |"
+        if used + len(line) > MAX_CHARS:  # Antwort begrenzen, sonst sprengt sie den Kontext des Modells
+            break
+        out.append(line)
+        used += len(line)
+        shown += 1
+    if shown < len(rows):
+        out.append(f"\n{shown} von {len(rows)} Zeilen gezeigt (Antwort auf {MAX_CHARS} Zeichen begrenzt; weniger Spalten oder engeres WHERE/LIMIT verwenden)")
+    else:
+        out.append(f"\n{len(rows)} Zeilen" + (f" (Limit {limit} erreicht, weitere Zeilen nicht geladen; mit WHERE/LIMIT eingrenzen)" if more else ""))
     return "\n".join(out)
 
 
@@ -133,7 +145,7 @@ def tabellen_auflisten(umgebung: str = "", filter: str = "") -> str:
                           "ROUND((data_length+index_length)/1024/1024,1) AS mb "
                           "FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name LIKE %s "
                           "ORDER BY table_name", (f"%{filter}%",), max_rows=2000)
-    return f"Datenbank `{db}` ({umgebung})\n\n" + _table(cols, rows, 2000)
+    return f"Datenbank `{db}` ({umgebung or ENV_NAME})\n\n" + _table(cols, rows, 2000)
 
 
 @mcp.tool()
@@ -154,7 +166,7 @@ def tabelle_beschreiben(tabelle: str, umgebung: str = "") -> str:
                            "SELECT column_name AS spalte, referenced_table_name AS verweist_auf, referenced_column_name AS ziel_spalte "
                            "FROM information_schema.key_column_usage WHERE table_schema = DATABASE() AND table_name = %s "
                            "AND referenced_table_name IS NOT NULL", (tabelle,), max_rows=200)
-    return (f"Tabelle `{tabelle}` in `{db}` ({umgebung})\n\n" + _table(cols, rows, 1000)
+    return (f"Tabelle `{tabelle}` in `{db}` ({umgebung or ENV_NAME})\n\n" + _table(cols, rows, 1000)
             + ("\n\nFremdschlüssel:\n\n" + _table(fcols, frows, 200) if frows else ""))
 
 
@@ -175,7 +187,7 @@ def sql_abfrage(sql: str, umgebung: str = "", max_zeilen: int = 100) -> str:
         db, cols, rows = _run(umgebung, sql.strip().rstrip(";"), max_rows=limit)
     except pymysql.err.MySQLError as e:
         return f"MySQL-Fehler: {e.args[-1] if e.args else e}"
-    return f"`{db}` ({umgebung})\n\n" + _table(cols, rows, limit)
+    return f"`{db}` ({umgebung or ENV_NAME})\n\n" + _table(cols, rows, limit)
 
 
 if __name__ == "__main__":

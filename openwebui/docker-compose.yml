@@ -36,6 +36,24 @@ services:
     networks:
       - proxy
 
+  # Spielt config.json ein (Verbindungen, Websuche, Tools, Modelle, Standardmodell); läuft bei jedem up einmal
+  setup:
+    image: ghcr.io/open-webui/open-webui:v0.13.4
+    restart: "no"
+    env_file: .env   # Geheimnisse für ${NAME} in config.json
+    depends_on: [openwebui]
+    entrypoint: ["python3", "/setup.py"]
+    environment:
+      - WEBUI_INTERNAL_URL=http://openwebui:8080
+      - ADMIN_EMAIL=${WEBUI_ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${WEBUI_ADMIN_PASSWORD}
+      - ADMIN_TOKEN=${WEBUI_ADMIN_TOKEN:-}
+    volumes:
+      - ./setup.py:/setup.py:ro
+      - ./config.json:/config.json:ro
+    networks:
+      - proxy
+
 volumes:
   data:
     external: true

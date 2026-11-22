@@ -10,6 +10,18 @@ Chat und Modellverwaltung mit Login. Details: [docs/openwebui.md](../docs/openwe
 
 Funktionsaufruf auf "Standard" lassen, damit es auch mit Modellen ohne Tool-Unterstützung funktioniert.
 
+## Standardmodell (Websuche + Gmail)
+
+Neue Chats starten mit **Assistent · Websuche & Gmail** (`assistent`, Basis `qwen3.8:27b-q4-256k`): Websuche (Brave) und Gmail/Kalender-Tools (`gmail-mcp` aus oryn-gateway) sind von Anfang an aktiv, native Tool-Aufrufe. Definiert in `config.json`, eingespielt vom Dienst `setup` (bei jedem `docker compose up`):
+
+```
+docker compose run --rm --no-deps setup
+```
+
+`config.json` enthält ausserdem die Admin-Konfiguration, damit sie nicht nur in der Datenbank steckt: Ollama-Verbindungen, Websuche (Brave), Tool-Server (Gmail), Task-Modell, Standardmodell, Modell-Reihenfolge, Favoriten und Namen/Beschreibungen der Basismodelle. Änderungen in der Admin-Oberfläche werden beim nächsten Setup überschrieben, also hier eintragen.
+
+`.env` braucht `WEBUI_ADMIN_EMAIL`/`WEBUI_ADMIN_PASSWORD` (oder `WEBUI_ADMIN_TOKEN`) sowie die Geheimnisse `BRAVE_SEARCH_API_KEY`, `GMAIL_MCP_KEY`, `OLLAMA_SCOUT_KEY`.
+
 ## Favoriten
 
 In der Seitenleiste angepinnt:

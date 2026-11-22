@@ -51,6 +51,7 @@ services:
     volumes:
       - ./setup.py:/setup.py:ro
       - ./config.json:/config.json:ro
+      - ./comfyui:/comfyui:ro   # ComfyUI-Workflows (API-Format) für die Bildgenerierung
     networks:
       - proxy
 

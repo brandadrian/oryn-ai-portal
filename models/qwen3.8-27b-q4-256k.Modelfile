@@ -16,6 +16,7 @@
 #   Hinweis:       Belegt eine eigene Modell-Instanz, verdrängt q4-128k/analyse beim Laden.
 #
 # PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich, gemessen 22.11.2026)
 #   num_ctx 262144  256k Kontext
 #
 # ERSTELLEN
@@ -25,3 +26,4 @@
 FROM qwen3.8:27b
 
 PARAMETER num_ctx 262144
+PARAMETER use_mmap false

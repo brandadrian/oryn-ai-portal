@@ -17,6 +17,7 @@
 #   Backend:        Vulkan (OLLAMA_VULKAN=1, HIP_VISIBLE_DEVICES=-1)
 #
 # PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich, gemessen 22.11.2026)
 #   Name               Wert     Standard  Zweck
 #   temperature        0        1         deterministisch, keine erfundenen Details
 #   top_k              20       -         Qwen-Empfehlung, wirkt bei temp 0 kaum
@@ -35,3 +36,4 @@ PARAMETER top_k 20
 PARAMETER top_p 0.95
 PARAMETER presence_penalty 1.5
 PARAMETER num_ctx 131072
+PARAMETER use_mmap false

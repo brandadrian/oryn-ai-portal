@@ -17,6 +17,7 @@
 #   Voraussetzung: OLLAMA_NUM_PARALLEL=1 (bei 2 verdoppelt sich der KV-Cache)
 #
 # PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich, gemessen 22.11.2026)
 #   num_ctx 32768  32k Kontext, 66/66 Layer auf der R9700 mit Reserve (48k geht auch, 64k nicht)
 #
 # ERSTELLEN
@@ -26,3 +27,4 @@
 FROM qwen3.8:27b-mtp-q8_0
 
 PARAMETER num_ctx 32768
+PARAMETER use_mmap false

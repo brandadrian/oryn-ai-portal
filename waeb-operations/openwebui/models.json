@@ -5,7 +5,8 @@
     "qwen3.8:27b-q4-128k",
     "qwen3.8:27b-analyse-q4-128k",
     "qwen3.8:27b-q8-32k",
-    "qwen3.8:27b-q4-256k"
+    "qwen3.8:27b-q4-256k",
+    "qwen3.5:9b"
   ],
   "umgebungen": {
     "prod": {

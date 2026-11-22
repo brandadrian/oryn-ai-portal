@@ -18,6 +18,7 @@
 #   System-Prompt: keiner
 #
 # PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich, gemessen 22.11.2026)
 #   num_ctx 262144  voller Kontext des Modells
 #
 # ERSTELLEN
@@ -26,3 +27,4 @@
 FROM qwen3.5:35b-a3b-mtp-q4_K_M
 
 PARAMETER num_ctx 262144
+PARAMETER use_mmap false

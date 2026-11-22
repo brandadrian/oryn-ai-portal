@@ -14,6 +14,7 @@
 #   System-Prompt: keiner
 #
 # PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich, gemessen 22.11.2026)
 #   num_ctx 131072  128k Kontext, gleich wie analyse: beide teilen sich ein geladenes Modell
 #
 # ERSTELLEN
@@ -22,3 +23,4 @@
 FROM qwen3.8:27b
 
 PARAMETER num_ctx 131072
+PARAMETER use_mmap false

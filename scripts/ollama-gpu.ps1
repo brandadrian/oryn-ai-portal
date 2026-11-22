@@ -43,17 +43,22 @@ function Get-Devices([int]$FromLine = 0, [string]$Path = $log) {
       Line = $_.LineNumber
       Library = [regex]::Match($_.Line, 'library=(\w+)').Groups[1].Value
       Name = [regex]::Match($_.Line, ' name=(\w+)').Groups[1].Value
+      FilterId = [regex]::Match($_.Line, 'filter_id=(\d+)').Groups[1].Value
       Description = [regex]::Match($_.Line, 'description="([^"]+)"').Groups[1].Value
       Total = [regex]::Match($_.Line, 'total="([^"]+)"').Groups[1].Value
     } })
 }
 
 function Get-VulkanIndex([string]$Pattern) {
-  # letzter Start, bei dem beide Karten unter Vulkan sichtbar waren -> Index aus "VulkanN"
-  # sucht in server.log und den rotierten server-1..5.log (neueste zuerst)
-  $files = @($log) + @(1..5 | ForEach-Object { Join-Path $env:LOCALAPPDATA "Ollama\server-$_.log" })
+  # neuester Eintrag der Karte -> filter_id ist der echte Vulkan-Index (auch wenn GGML_VK_VISIBLE_DEVICES gefiltert hat).
+  # Ältere Logs ohne filter_id: nur Starts mit beiden Karten, Index aus "VulkanN".
+  # sucht in server.log, server-11435.log und den rotierten server-1..5.log (neueste Datei zuerst)
+  $files = @($log, $log2) + @(1..5 | ForEach-Object { Join-Path $env:LOCALAPPDATA "Ollama\server-$_.log" }) |
+    Where-Object { Test-Path $_ } | Sort-Object { (Get-Item $_).LastWriteTime } -Descending
   foreach ($f in $files) {
     $all = Get-Devices 0 $f | Where-Object Library -eq 'Vulkan'
+    $hit = $all | Where-Object { $_.Description -match $Pattern -and $_.FilterId -ne '' } | Select-Object -Last 1
+    if ($hit) { return [int]$hit.FilterId }
     $hit = $all | Where-Object { $_.Description -match $Pattern -and $_.Name -match '^Vulkan\d+$' } |
       Where-Object { $l = $_.Line; @($all | Where-Object { [math]::Abs($_.Line - $l) -le 2 }).Count -ge 2 } | Select-Object -Last 1
     if ($hit) { return [int]($hit.Name -replace 'Vulkan', '') }

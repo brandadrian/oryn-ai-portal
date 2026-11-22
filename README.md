@@ -132,8 +132,8 @@ Anlass: GitHub Copilot (Incident-Analysen mit Loki/ES/GitLab/Prometheus) wartete
 | | Wert |
 |---|---|
 | Copilot-Modell | `qwen3.6:27b-abx-rca-q4-128k` (Q4, 128k Kontext), nur R9700, 25 GB, 100 % GPU |
-| Karten | Vulkan, nur R9700: `GGML_VK_VISIBLE_DEVICES=1`. Der Monitor hängt an der RX 7800 XT, siehe unten |
-| Parallel | `OLLAMA_NUM_PARALLEL=2`: 2 Slots mit je 128k |
+| Karten | Vulkan, nur R9700. Index hängt vom Slot ab (seit Slot-Tausch 2026-11-22: `GGML_VK_VISIBLE_DEVICES=0`), siehe unten |
+| Parallel | `OLLAMA_NUM_PARALLEL=1` (bewusst, kein Parallelbetrieb). Mit 2 Slots passen 256k bzw. Q8 nicht mehr auf die R9700 |
 | Alternative genau | `qwen3.6:27b-abx-rca-128k` (Q8, 40/40 im Benchmark), braucht **beide** Karten (38 GB) |
 
 Neue Modelfiles: `models/qwen3.6-27b-abx-rca-128k.Modelfile`, `models/qwen3.6-27b-abx-rca-q4-128k.Modelfile`.
@@ -195,6 +195,14 @@ qwen3.8 27B Q8 36/40, 35B-A3B höchstens 30–32/40.
 - **Vulkan-Reihenfolge ändert sich mit dem Monitor:** Die Karte mit dem Monitor wird `Vulkan0`. Jetzt: `Vulkan0` = RX 7800 XT,
   `Vulkan1` = R9700. Nach dem Umstecken stand `GGML_VK_VISIBLE_DEVICES=0` noch auf dem alten Wert, und Q8 lief zu 58 % auf
   der CPU. Prüfen im `server.log`: `using device Vulkan0 (…)`.
+- **Slot-Tausch ändert die Indizes ebenfalls:** Seit dem Tausch der PCIe-Slots (2026-11-22) gilt `Vulkan0` = R9700,
+  `Vulkan1` = RX 7800 XT. Danach zeigte `GGML_VK_VISIBLE_DEVICES=1` auf die RX 7800 XT, und
+  `qwen3.8:27b-q4-128k` lief nur 38/66 Layer auf der GPU (46 % CPU). Erkennen im `server.log`:
+  `inference compute … filter_id=N … description="…"`, wobei `filter_id` der echte Vulkan-Index ist, sowie
+  `offloaded X/66 layers`. Abhilfe: einfach `scripts\ollama-gpu.ps1 -Mode split` (bzw. `r9700`/`rx`) erneut ausführen.
+  Das Skript nimmt den Index jetzt aus dem **neuesten** Log-Eintrag der Karte (`filter_id`), auch wenn nur eine Karte
+  sichtbar war. Vorher suchte es den letzten Start mit beiden Karten, der stammte noch aus der Zeit vor dem Tausch.
+  Kontrolle danach: `ollama ps` muss „100% GPU“ zeigen.
 - Q8 (26 GB + 8,7 GB Cache) passt **nicht** allein auf die R9700, Q4 (15 GB + 8,7 GB) schon.
 - Der i5-13600KF hat keine integrierte Grafik, den Monitor kann also nur eine der Karten übernehmen.
 
@@ -214,7 +222,8 @@ Faustformel: `VRAM ≈ Gewichte + KV-Cache + ca. 1–2 GB Overhead`
 - Ollama neu starten aus einer Shell: Die Taskleisten-App übernimmt die Variablen **dieser Shell**, nicht die gespeicherten
   Benutzervariablen. Eine alte Shell startet Ollama z. B. mit `OLLAMA_NUM_PARALLEL=1` oder ohne `HIP_VISIBLE_DEVICES`.
   Vorher alle Variablen aus `[Environment]::GetEnvironmentVariable(…, 'User')` in die Shell laden (oder neue Shell).
-  `scripts/ollama-gpu.ps1` lädt aktuell nur die drei GPU-Variablen.
+  `scripts/ollama-gpu.ps1` lädt die GPU-Variablen sowie `OLLAMA_NUM_PARALLEL`, `OLLAMA_CONTEXT_LENGTH`,
+  `OLLAMA_KV_CACHE_TYPE` und `OLLAMA_FLASH_ATTENTION`.
 - Beim Neustart hat Ollama sich selbst aktualisiert (0.40.13 → 0.40.15), Einstellungen blieben erhalten.
 - Nützliche Log-Muster in `%LOCALAPPDATA%\Ollama\server.log`: `new prompt`, `prompt eval time`, `eval time`,
   `selected slot by LCP similarity`, `forcing full prompt`, `model buffer size`, `KV buffer size`, `msg="server config"`.

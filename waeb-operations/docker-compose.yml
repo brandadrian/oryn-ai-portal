@@ -131,7 +131,7 @@ services:
       MCPO_KEY: ${MCPO_PROD_KEY:?MCPO_PROD_KEY setzen}
       # PROD nur lesend: schreibende Shopware-Tools sind ausgeblendet und gesperrt
       SHOPWARE_READONLY: ${SHOPWARE_PROD_READONLY:-true}
-      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-100000}
+      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-40000}
     entrypoint: ["/bin/sh", "-c"]
     command: &mcpo-cmd
       - |
@@ -151,7 +151,7 @@ services:
       SHOPWARE_API_CLIENT_SECRET: ${SHOPWARE_STAGING_CLIENT_SECRET:?SHOPWARE_STAGING_CLIENT_SECRET setzen}
       MCPO_KEY: ${MCPO_STAGING_KEY:?MCPO_STAGING_KEY setzen}
       SHOPWARE_READONLY: ${SHOPWARE_STAGING_READONLY:-false}
-      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-100000}
+      MAX_TOOL_RESULT_CHARS: ${MAX_TOOL_RESULT_CHARS:-40000}
     entrypoint: ["/bin/sh", "-c"]
     command: *mcpo-cmd
     volumes: *mcpo-vols
@@ -189,7 +189,7 @@ services:
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen}
       - ENABLE_OLLAMA_API=false
-      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k"}]}}'
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-32k","qwen3.8:27b-q4-256k"}]}}'
       - DEFAULT_MODELS=prod-shop
       - DEFAULT_PINNED_MODELS=prod-shop,prod-technik
       # Nur die Tool-Server dieser Umgebung
@@ -254,7 +254,7 @@ services:
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen}
       - ENABLE_OLLAMA_API=false
-      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k"}]}}'
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-32k","qwen3.8:27b-q4-256k"}]}}'
       - DEFAULT_MODELS=staging-shop
       - DEFAULT_PINNED_MODELS=staging-shop,staging-technik
       # Nur die Tool-Server dieser Umgebung

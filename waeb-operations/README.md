@@ -68,7 +68,7 @@ docker compose down                 # stoppen
 
 Beim ersten Start (leeres Volume) wird aus der `.env` automatisch angelegt:
 - Admin-Konto `WEBUI_ADMIN_EMAIL` / `WEBUI_ADMIN_PASSWORD`, Registrierung ist danach aus.
-- LLM: über die Oryn-API mit Key (`LLM_API_BASE_URL`, `LLM_API_KEY`), damit es auch auf einem anderen Rechner läuft. Optional zusätzlich Ollama direkt ohne Key mit `ENABLE_OLLAMA=true` (nur auf dem Ollama-Rechner). Angeboten werden nur die Modelle aus `MODEL_IDS_JSON` (Default 35B-A3B Q4, 27B, 27B Analyse), Standard `DEFAULT_MODEL`.
+- LLM: über die Oryn-API mit Key (`LLM_API_BASE_URL`, `LLM_API_KEY`), damit es auch auf einem anderen Rechner läuft. Optional zusätzlich Ollama direkt ohne Key mit `ENABLE_OLLAMA=true` (nur auf dem Ollama-Rechner). Angeboten werden nur die Modelle aus `MODEL_IDS_JSON` (Default 35B-A3B Q4, 27B, 27B Analyse, 27B Q8 32k „Genau“, 27B Q4 256k „Langer Kontext“), Standard `DEFAULT_MODEL`.
 - MCP-Verbindung „Loki Maxcluster“ zu `http://loki-mcp:8000/mcp`, bei jedem Modell standardmäßig eingeschaltet (`server:mcp:loki`), native Tool-Aufrufe.
 - Lokale Ports: Open WebUI PROD 3010, STAGING 3011, Grafana 3020, Loki 3110, MySQL 3316, Prometheus 9190 (3000, 3100, 9090 sind hier schon belegt). Anpassbar über `WEBUI_PROD_HOST_PORT`, `WEBUI_STAGING_HOST_PORT`, `GRAFANA_HOST_PORT`, `LOKI_HOST_PORT`, `MYSQL_HOST_PORT`, `PROMETHEUS_HOST_PORT`.
 

@@ -3,7 +3,9 @@
   "basismodelle": [
     "qwen3.5:35b-a3b-q4-256k",
     "qwen3.8:27b-q4-128k",
-    "qwen3.8:27b-analyse-q4-128k"
+    "qwen3.8:27b-analyse-q4-128k",
+    "qwen3.8:27b-q8-32k",
+    "qwen3.8:27b-q4-256k"
   ],
   "umgebungen": {
     "prod": {
@@ -51,6 +53,18 @@
       "basis": "qwen3.8:27b-analyse-q4-128k",
       "name": "{label} · Analyse",
       "description": "{label} {shop}: grosse Auswertungen über viele Log-Zeilen, Bestellungen oder Dateien. Langsam, 128k Kontext."
+    },
+    {
+      "suffix": "genau",
+      "basis": "qwen3.8:27b-q8-32k",
+      "name": "{label} · Genau",
+      "description": "{label} {shop}: knifflige Fragen, bei denen sauberes Denken zählt (Q8, genauer als Gründlich). ~39 Token/s, nur 32k Kontext – für kurze, gezielte Abfragen."
+    },
+    {
+      "suffix": "lang",
+      "basis": "qwen3.8:27b-q4-256k",
+      "name": "{label} · Langer Kontext",
+      "description": "{label} {shop}: sehr lange Eingaben und Verläufe (grosse Logs, viele Dateien). ~50 Token/s, 256k Kontext."
     }
   ],
   "agenten": [

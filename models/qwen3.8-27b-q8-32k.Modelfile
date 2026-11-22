@@ -1,0 +1,28 @@
+# ============================================================
+# qwen3.8:27b-q8-32k
+# ============================================================
+#
+# WOFÜR
+#   Genauere Qwen-3.8-27B-Variante (Q8 statt Q4) für Analysen und Reasoning,
+#   allein auf der R9700 (Port 11434 im split-Modus). Kontext dafür auf 32k begrenzt (mehr Reserve als q8-48k).
+#
+# EIGENSCHAFTEN
+#   Basis:         qwen3.8:27b-mtp-q8_0 (Q8_0, dicht, mit MTP-Draft, ca. 27 GiB Gewichte)
+#   Kontext:       32k Tokens. Hybrid-Modell: nur 16 von 64 Layern haben KV-Cache,
+#                  32k mit KV q8_0 ≈ 1,1 GiB. Mit 128k (≈ 33 GiB gesamt) passt Q8 nicht auf die
+#                  R9700 (32 GB), dann nur auf beiden Karten.
+#   MTP:           draft_num_predict 4 wie beim Basis-Tag (speculative decoding über den nextn-Layer)
+#   Sampling:      Standardwerte des Basismodells
+#   System-Prompt: keiner
+#   Voraussetzung: OLLAMA_NUM_PARALLEL=1 (bei 2 verdoppelt sich der KV-Cache)
+#
+# PARAMETER
+#   num_ctx 32768  32k Kontext, 66/66 Layer auf der R9700 mit Reserve (48k geht auch, 64k nicht)
+#
+# ERSTELLEN
+#   ollama create qwen3.8:27b-q8-32k -f models/qwen3.8-27b-q8-32k.Modelfile
+#   Prüfen: ollama ps muss "100% GPU" zeigen
+# ============================================================
+FROM qwen3.8:27b-mtp-q8_0
+
+PARAMETER num_ctx 32768

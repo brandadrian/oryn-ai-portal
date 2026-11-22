@@ -1,0 +1,27 @@
+# ============================================================
+# qwen3.8:27b-q4-256k
+# ============================================================
+#
+# WOFÜR
+#   Wie qwen3.8:27b-q4-128k, aber mit dem vollen Kontext des Modells (256k).
+#   Für sehr lange Eingaben: grosse Logs, viele Dateien, lange Copilot-Sitzungen.
+#
+# EIGENSCHAFTEN
+#   Basis:         Qwen 3.8 27B, Q4_K_M (dicht), gleiche Dateien wie qwen3.8:27b, mit MTP (draft_num_predict 4)
+#   Kontext:       256k Tokens (Maximum des Modells, context_length 262144).
+#                  Hybrid-Modell: nur 16 von 64 Layern haben KV-Cache, 256k mit KV q8_0 ≈ 8,5 GiB.
+#                  Gesamt ca. 26 GiB auf der R9700 (nur mit OLLAMA_NUM_PARALLEL=1)
+#   Sampling:      Standardwerte des Basismodells
+#   System-Prompt: keiner
+#   Hinweis:       Belegt eine eigene Modell-Instanz, verdrängt q4-128k/analyse beim Laden.
+#
+# PARAMETER
+#   num_ctx 262144  256k Kontext
+#
+# ERSTELLEN
+#   ollama create qwen3.8:27b-q4-256k -f models/qwen3.8-27b-q4-256k.Modelfile
+#   Prüfen: ollama ps muss "100% GPU" zeigen
+# ============================================================
+FROM qwen3.8:27b
+
+PARAMETER num_ctx 262144

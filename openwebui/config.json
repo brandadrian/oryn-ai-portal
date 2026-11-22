@@ -2,7 +2,7 @@
   "_hinweis": "Wird von setup.py bei jedem 'docker compose up' eingespielt. Platzhalter wie ${BRAVE_SEARCH_API_KEY} kommen aus .env (Geheimnisse nie hier eintragen).",
 
   "ollama": {
-    "urls": ["http://host.docker.internal:11434", "http://host.docker.internal:11435"],
+    "urls": ["http://meter-openwebui:8081", "http://meter-openwebui-scout:8081"],
     "verbindungen": {
       "0": {"enable": true, "tags": [], "prefix_id": "", "model_ids": [], "connection_type": "local", "auth_type": "bearer", "passthrough_params": [], "key": ""},
       "1": {"enable": true, "tags": [], "prefix_id": "Scout", "model_ids": [], "connection_type": "external", "auth_type": "bearer", "passthrough_params": [], "key": "${OLLAMA_SCOUT_KEY}"}

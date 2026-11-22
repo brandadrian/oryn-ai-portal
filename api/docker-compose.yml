@@ -50,10 +50,16 @@ services:
     environment:
       - OLLAMA_URL=http://host.docker.internal:11434
       - LOKI_URL=http://host.docker.internal:3100
+    # lokal für Programme auf dem PC (z.B. opencode), statt direkt auf :11434 -> wird gemessen
+    ports:
+      - 127.0.0.1:11444:8080
     extra_hosts:
       - host.docker.internal:host-gateway
+    # Port 8081: für Open WebUI chat.oryn direkt (ohne nginx/Key), Client in Grafana "chat-oryn"
     networks:
-      - default
+      default:
+      proxy:
+        aliases: [meter-openwebui]
 
   # wie meter, aber für die zweite Ollama-Instanz (RX 7800 XT, scripts/ollama-gpu.ps1 -Mode split)
   meter2:
@@ -66,10 +72,14 @@ services:
       - OLLAMA_URL=http://host.docker.internal:11435
       - LOKI_URL=http://host.docker.internal:3100
       - METER_GPU=rx7800
+    ports:
+      - 127.0.0.1:11445:8080
     extra_hosts:
       - host.docker.internal:host-gateway
     networks:
-      - default
+      default:
+      proxy:
+        aliases: [meter-openwebui-scout]
 
 networks:
   proxy:

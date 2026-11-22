@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=http://meter-openwebui:8081   # über Mess-Proxy (api/), damit Grafana es sieht
       - WEBUI_URL=https://chat.oryn.brandadrian.com
       - CORS_ALLOW_ORIGIN=https://chat.oryn.brandadrian.com;https://openwebui.localhost
       # öffentlich erreichbar: Login an, keine Selbstregistrierung

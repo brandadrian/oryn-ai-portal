@@ -6,6 +6,9 @@ import http from 'node:http';
 const OLLAMA = new URL(process.env.OLLAMA_URL || 'http://host.docker.internal:11434');
 const LOKI = process.env.LOKI_URL || '';               // z.B. http://host.docker.internal:3100
 const PORT = Number(process.env.PORT || 8080);
+// Zweiter Port für Open WebUI chat.oryn (direkt, ohne nginx): dort ist der Client fest "chat-oryn"
+const OPENWEBUI_PORT = Number(process.env.OPENWEBUI_PORT || 8081);
+const OPENWEBUI_CLIENT = 'chat-oryn';
 const TOKENIZE_RETRIES = Number(process.env.TOKENIZE_RETRIES ?? 2);   // Wiederholungen bei ollama_tokenize_reset
 const TOKENIZE_RESET = /chat prompt error|\/tokenize|wsarecv|forcibly closed/i;
 const INFERENCE = /^\/(api\/(chat|generate|embed|embeddings)|v1\/(chat\/completions|completions|embeddings))$/;
@@ -40,6 +43,7 @@ setInterval(flush, 5000).unref();
 function clientName(ua = '') {
   const u = ua.toLowerCase();
   if (u.includes('copilot') || u.includes('vscode')) return 'copilot';
+  if (u.includes('opencode')) return 'opencode';
   if (u.includes('open-webui') || u.includes('openwebui')) return 'open-webui';
   if (u.startsWith('curl')) return 'curl';
   if (u.includes('python')) return 'python';
@@ -103,7 +107,7 @@ function makeParser(contentType, s) {
 }
 
 // ---------- Proxy ----------
-const server = http.createServer((req, res) => {
+const handler = (req, res) => {
   const t0 = Date.now();
   const path = (req.url || '/').split('?')[0];
   const measure = req.method === 'POST' && INFERENCE.test(path);
@@ -113,7 +117,7 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     let body = Buffer.concat(chunks);
     const s = {
-      ts: t0, endpoint: path, client: clientName(req.headers['user-agent']),
+      ts: t0, endpoint: path, client: req.socket.localPort === OPENWEBUI_PORT ? OPENWEBUI_CLIENT : clientName(req.headers['user-agent']),
       user: String(req.headers['x-gateway-user'] || '') || undefined,   // E-Mail aus dem Token-Portal
       user_agent: (req.headers['user-agent'] || '').slice(0, 200),
       ip: String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim(),
@@ -137,8 +141,10 @@ const server = http.createServer((req, res) => {
       } catch { /* kein JSON: unverändert durchreichen */ }
     }
 
-    // Host-Header bleibt "localhost" (setzt nginx), sonst lehnt Ollama ab
-    const headers = { ...req.headers, 'content-length': String(body.length) };
+    // Ollama lehnt fremde Host-/Origin-Header ab (403): immer localhost, kein Origin, kein Key
+    const headers = { ...req.headers, host: 'localhost', 'content-length': String(body.length) };
+    delete headers.origin;
+    delete headers.authorization;
     delete headers['transfer-encoding'];
     delete headers['x-gateway-user'];
     let up;
@@ -224,9 +230,12 @@ const server = http.createServer((req, res) => {
     });
     send(0);
   });
-});
+};
 
-server.requestTimeout = 0;      // lange Generierungen nicht abbrechen
-server.headersTimeout = 0;
-server.listen(PORT, () => console.log(`ollama-meter :${PORT} -> ${OLLAMA.href}, loki=${LOKI || 'aus'}`));
+for (const port of [PORT, OPENWEBUI_PORT]) {
+  const server = http.createServer(handler);
+  server.requestTimeout = 0;      // lange Generierungen nicht abbrechen
+  server.headersTimeout = 0;
+  server.listen(port, () => console.log(`ollama-meter :${port} -> ${OLLAMA.href}, loki=${LOKI || 'aus'}`));
+}
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { await flush(); process.exit(0); });

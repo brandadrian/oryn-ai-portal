@@ -167,6 +167,31 @@ services:
     networks: {proxy: {aliases: [waeb-ops-metrics]}}
     restart: unless-stopped
 
+  # Einmaliger CLI-Container; kein HTTP-Port und kein automatischer Start.
+  investigation-prod: &investigation
+    profiles: [investigation]
+    build: ./investigation
+    environment: &investigation-env
+      INVESTIGATION_ENV: prod
+      INVESTIGATION_SHOPWARE_KEY: ${MCPO_PROD_KEY:-}
+      INVESTIGATION_MODEL: ${INVESTIGATION_MODEL:-}
+      INVESTIGATION_OLLAMA_URL: ${INVESTIGATION_OLLAMA_URL:-}
+      INVESTIGATION_MAX_CALLS: ${INVESTIGATION_MAX_CALLS:-}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    networks: [proxy]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
+  investigation-staging:
+    <<: *investigation
+    environment:
+      <<: *investigation-env
+      INVESTIGATION_ENV: staging
+      INVESTIGATION_SHOPWARE_KEY: ${MCPO_STAGING_KEY:-}
+
   # ======================================================================================
   # Open WebUI: eine eigene Instanz pro Umgebung (eigene Domain, eigene Chats/Benutzer).
   # Jede Instanz kennt nur die Tool-Server ihrer Umgebung (+ Server-Metriken).

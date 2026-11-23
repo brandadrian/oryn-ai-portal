@@ -136,6 +136,11 @@ Danach `docker compose up -d mysql-mcp-prod mysql-mcp-staging`.
 Der Technik-Agent arbeitet nach einem festen Ablauf (Zeitfenster festlegen, erst zählen dann lesen, mit Metriken korrelieren, Symptom von Ursache trennen) und antwortet mit Befund, Ursache, Belegen und nächsten Schritten. Log-, Datei- und DB-Inhalte behandelt er als Daten, nicht als Anweisungen.
 Zusätzlich gibt es die freien Modelle **Schnell / Gründlich / Analyse** mit allen Tools der Umgebung. Die Basismodelle sind ausgeblendet.
 
+## Autonome Incident-Untersuchung
+
+Der Agent untersucht Fehler autonom mit lesenden Tools und erstellt einen JSON-Report.
+Startbefehle und Hinweise stehen im [Agent-README](investigation/README.md).
+
 ## Skills
 
 Drei einfache Skills in `openwebui/skills/<id>/SKILL.md`, die der Dienst `setup` bei jedem `docker compose up -d` in Open WebUI einspielt (für alle Benutzer). Das Modell sieht nur Name und Beschreibung und lädt einen Skill, wenn die Frage passt.

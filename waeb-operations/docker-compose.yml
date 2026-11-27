@@ -219,7 +219,7 @@ services:
       # damit die R9700 dafür nicht zwischen 27B und 35B wechseln muss
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen};${LLM_SCOUT_BASE_URL:-https://ollama-scout.oryn.brandadrian.com/v1}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen};${LLM_API_KEY}
-      - TASK_MODEL_EXTERNAL=${TASK_MODEL:-qwen3.5:9b}
+      - TASK_MODEL_EXTERNAL=${TASK_MODEL:-}   # leer = aktuelles Chat-Modell (27.11.: nur ein Modell im VRAM)
       - ENABLE_OLLAMA_API=false
       - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-256k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
       - DEFAULT_MODELS=prod-shop
@@ -288,7 +288,7 @@ services:
       # damit die R9700 dafür nicht zwischen 27B und 35B wechseln muss
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen};${LLM_SCOUT_BASE_URL:-https://ollama-scout.oryn.brandadrian.com/v1}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen};${LLM_API_KEY}
-      - TASK_MODEL_EXTERNAL=${TASK_MODEL:-qwen3.5:9b}
+      - TASK_MODEL_EXTERNAL=${TASK_MODEL:-}   # leer = aktuelles Chat-Modell (27.11.: nur ein Modell im VRAM)
       - ENABLE_OLLAMA_API=false
       - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-256k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
       - DEFAULT_MODELS=staging-shop

@@ -31,7 +31,7 @@
     }
   ],
 
-  "task_modell": "Scout.qwen3.5:9b",
+  "task_modell": "",
   "standardmodell": "assistent",
   "modell_reihenfolge": [],
   "favoriten": ["qwen3.8:27b", "qwen2.5-coder:14b", "qwen3-vl:8b-instruct"],

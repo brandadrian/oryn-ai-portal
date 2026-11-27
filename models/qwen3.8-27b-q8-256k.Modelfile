@@ -1,0 +1,29 @@
+# ============================================================
+# qwen3.8:27b-q8-256k
+# ============================================================
+#
+# WOFÜR
+#   Bestes Qwen-3.8-27B (Q8, voller Kontext) für Analysen und Reasoning auf BEIDEN R9700
+#   (scripts/ollama-gpu.ps1 -Mode both, 2 x 32 GB). Seit 26.11.2026 zwei R9700 statt R9700 + RX 7800 XT.
+#
+# EIGENSCHAFTEN
+#   Basis:         qwen3.8:27b-mtp-q8_0 (Q8_0, dicht, mit MTP-Draft, ca. 27 GiB Gewichte)
+#   Kontext:       262144 Tokens (Modell-Maximum). Nur 16 von 64 Layern haben KV-Cache,
+#                  256k mit KV q8_0 ≈ 8,5 GiB -> gesamt ca. 38 GiB, auf zwei Karten verteilt.
+#   MTP:           draft_num_predict 4 wie beim Basis-Tag
+#   Sampling:      Standardwerte des Basismodells
+#   System-Prompt: keiner
+#   Voraussetzung: OLLAMA_NUM_PARALLEL=1
+#
+# PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart ~16 GB RAM, Tempo gleich)
+#   num_ctx 262144  voller Kontext
+#
+# ERSTELLEN
+#   ollama create qwen3.8:27b-q8-256k -f models/qwen3.8-27b-q8-256k.Modelfile
+#   Prüfen: ollama ps muss "100% GPU" zeigen
+# ============================================================
+FROM qwen3.8:27b-mtp-q8_0
+
+PARAMETER num_ctx 262144
+PARAMETER use_mmap false

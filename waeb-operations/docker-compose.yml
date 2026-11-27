@@ -211,13 +211,13 @@ services:
       - ENABLE_PERSISTENT_CONFIG=false
       # Modelle über die Oryn-API mit Key; angeboten nur die drei Basismodelle (ausgeblendet, siehe models.json)
       - ENABLE_OPENAI_API=true
-      # Zweite Verbindung: Scout (RX 7800 XT, qwen3.5:9b) nur für Hintergrundaufgaben (Titel, Tags, Folgefragen),
+      # Zweite Verbindung: Scout (seit 26.11. gleiche Instanz wie R9700, qwen3.5:9b) nur für Hintergrundaufgaben (Titel, Tags, Folgefragen),
       # damit die R9700 dafür nicht zwischen 27B und 35B wechseln muss
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen};${LLM_SCOUT_BASE_URL:-https://ollama-scout.oryn.brandadrian.com/v1}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen};${LLM_API_KEY}
       - TASK_MODEL_EXTERNAL=${TASK_MODEL:-qwen3.5:9b}
       - ENABLE_OLLAMA_API=false
-      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-32k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-256k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
       - DEFAULT_MODELS=prod-shop
       - DEFAULT_PINNED_MODELS=prod-shop,prod-technik
       # Nur die Tool-Server dieser Umgebung
@@ -279,13 +279,13 @@ services:
       - ENABLE_PERSISTENT_CONFIG=false
       # Modelle über die Oryn-API mit Key; angeboten nur die drei Basismodelle (ausgeblendet, siehe models.json)
       - ENABLE_OPENAI_API=true
-      # Zweite Verbindung: Scout (RX 7800 XT, qwen3.5:9b) nur für Hintergrundaufgaben (Titel, Tags, Folgefragen),
+      # Zweite Verbindung: Scout (seit 26.11. gleiche Instanz wie R9700, qwen3.5:9b) nur für Hintergrundaufgaben (Titel, Tags, Folgefragen),
       # damit die R9700 dafür nicht zwischen 27B und 35B wechseln muss
       - OPENAI_API_BASE_URLS=${LLM_API_BASE_URL:?LLM_API_BASE_URL setzen};${LLM_SCOUT_BASE_URL:-https://ollama-scout.oryn.brandadrian.com/v1}
       - OPENAI_API_KEYS=${LLM_API_KEY:?LLM_API_KEY setzen};${LLM_API_KEY}
       - TASK_MODEL_EXTERNAL=${TASK_MODEL:-qwen3.5:9b}
       - ENABLE_OLLAMA_API=false
-      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-32k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
+      - 'OPENAI_API_CONFIGS={"0":{"enable":true,"model_ids":[${MODEL_IDS_JSON:-"qwen3.5:35b-a3b-q4-256k","qwen3.8:27b-q4-128k","qwen3.8:27b-analyse-q4-128k","qwen3.8:27b-q8-256k","qwen3.8:27b-q4-256k"}]},"1":{"enable":true,"model_ids":["${TASK_MODEL:-qwen3.5:9b}"]}}'
       - DEFAULT_MODELS=staging-shop
       - DEFAULT_PINNED_MODELS=staging-shop,staging-technik
       # Nur die Tool-Server dieser Umgebung

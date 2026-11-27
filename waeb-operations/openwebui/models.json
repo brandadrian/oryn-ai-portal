@@ -4,7 +4,7 @@
     "qwen3.5:35b-a3b-q4-256k",
     "qwen3.8:27b-q4-128k",
     "qwen3.8:27b-analyse-q4-128k",
-    "qwen3.8:27b-q8-32k",
+    "qwen3.8:27b-q8-256k",
     "qwen3.8:27b-q4-256k",
     "qwen3.5:9b"
   ],
@@ -57,9 +57,9 @@
     },
     {
       "suffix": "genau",
-      "basis": "qwen3.8:27b-q8-32k",
+      "basis": "qwen3.8:27b-q8-256k",
       "name": "{label} · Genau",
-      "description": "{label} {shop}: knifflige Fragen, bei denen sauberes Denken zählt (Q8, genauer als Gründlich). ~39 Token/s, nur 32k Kontext – für kurze, gezielte Abfragen."
+      "description": "{label} {shop}: knifflige Fragen, bei denen sauberes Denken zählt (Q8, genauer als Gründlich). ~33 Token/s, 256k Kontext, auf beiden R9700."
     },
     {
       "suffix": "lang",
@@ -92,7 +92,7 @@
     },
     {
       "suffix": "technik",
-      "basis": "qwen3.8:27b-q4-128k",
+      "basis": "qwen3.8:27b-q8-256k",
       "name": "🔧 Technik · Logs, Fehler & Datenbank",
       "description": "{label} {shop}: Fehleranalyse mit Logs, Dateien, Datenbank und Server-Metriken. Belegt jede Aussage mit Abfrage und Fundstelle. Gründlich.",
       "tools": [

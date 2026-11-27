@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 
-namespace ModelManager.Api.Infrastructure;
+namespace ModelManager.Web.Infrastructure;
 
 /// <summary>Console log line: timestamp;loglevel;message</summary>
 public sealed class CsvLogFormatter() : ConsoleFormatter(Name)

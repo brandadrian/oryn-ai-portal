@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
 using ModelManager.Adapters.Ollama;
-using ModelManager.Api.Endpoints;
-using ModelManager.Api.Infrastructure;
+using ModelManager.Web.Endpoints;
+using ModelManager.Web.Infrastructure;
 using ModelManager.Core;
 using ModelManager.Core.Services;
 

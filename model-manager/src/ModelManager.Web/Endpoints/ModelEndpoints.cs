@@ -1,7 +1,7 @@
 using ModelManager.Core.Models;
 using ModelManager.Core.Services;
 
-namespace ModelManager.Api.Endpoints;
+namespace ModelManager.Web.Endpoints;
 
 public sealed record ModelRequest(string Name);
 

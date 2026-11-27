@@ -42,12 +42,12 @@ docker compose up -d --build
 ```powershell
 dotnet test src/ModelManager.slnx
 $env:Manager__User="admin"; $env:Manager__Password="local-test-pw"
-dotnet run --project src/ModelManager.Api
+dotnet run --project src/ModelManager.Web
 ```
 
 ## Configuration
 
-Section `Manager` (`appsettings.json`, env `Manager__*`), see `src/ModelManager.Api/appsettings.example.json`.
+Section `Manager` (`appsettings.json`, env `Manager__*`), see `src/ModelManager.Web/appsettings.example.json`.
 
 | Key | Default | Description |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ The agent logs to `%LOCALAPPDATA%\Oryn\ollama-restart-agent.log`. Credentials ar
 ```text
 src/
   ModelManager.slnx
-  ModelManager.Api/              endpoints, Basic Auth, logging, static UI (wwwroot)
+  ModelManager.Web/              endpoints, Basic Auth, logging, static UI (wwwroot)
   ModelManager.Core/             models, options, Modelfile reader, ModelService, IOllamaClient
   ModelManager.Adapters.Ollama/  Ollama REST client
 tests/ModelManager.Tests/        unit tests (Modelfile parsing, merge)

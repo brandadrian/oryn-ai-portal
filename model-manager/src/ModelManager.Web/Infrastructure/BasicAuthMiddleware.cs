@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using ModelManager.Core;
 
-namespace ModelManager.Api.Infrastructure;
+namespace ModelManager.Web.Infrastructure;
 
 /// <summary>HTTP Basic Auth for the whole app (UI + API), constant-time comparison.</summary>
 public sealed class BasicAuthMiddleware(RequestDelegate next, IOptions<ModelManagerOptions> options)

@@ -14,6 +14,7 @@
                 Instanz A (11434), startet A nie neu. Für den Autostart beim Anmelden (scripts\install-ollama-autostart.ps1).
   -Mode rocm    zurück auf ROCm (Ollama-Standard). Achtung: 35B-A3B stürzt mit ROCm ab, wenn er auf beide Karten verteilt wird.
   -Mode restart Ollama nur neu starten, Einstellungen bleiben
+  -Mode apply   Werte aus ollama\env.json als Benutzervariablen setzen (zeigt Änderungen) und Ollama neu starten
   -Mode status  nur anzeigen (Standard ohne Parameter)
 
   Setzt die Windows-Benutzervariablen OLLAMA_VULKAN, HIP_VISIBLE_DEVICES und GGML_VK_VISIBLE_DEVICES,
@@ -23,7 +24,7 @@
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\ollama-gpu.ps1 -Mode r9700
 #>
-param([ValidateSet('both', 'r9700', 'rx', 'split', 'split-rx', 'second', 'rocm', 'restart', 'status')][string]$Mode = 'status')
+param([ValidateSet('both', 'r9700', 'rx', 'split', 'split-rx', 'second', 'rocm', 'restart', 'apply', 'status')][string]$Mode = 'status')
 
 $log = Join-Path $env:LOCALAPPDATA 'Ollama\server.log'
 $log2 = Join-Path $env:LOCALAPPDATA 'Ollama\server-11435.log'
@@ -33,7 +34,23 @@ $port2 = 11435
 $ctx2 = '131072'   # Kontext der zweiten Instanz (RX 7800 XT, 16 GB); qwen3.5:9b mit 128k ca. 8 GB VRAM# OLLAMA_SPLIT_SECOND: Vulkan-Index der Karte für die zweite Instanz (nur in den split-Modi gesetzt)
 $vars = 'OLLAMA_VULKAN', 'HIP_VISIBLE_DEVICES', 'GGML_VK_VISIBLE_DEVICES', 'OLLAMA_SPLIT_SECOND'
 # Beim Neustart zusätzlich aus den Benutzervariablen übernehmen (sonst erbt Ollama alte Werte aus der aufrufenden Shell)
-$keep = 'OLLAMA_NUM_PARALLEL', 'OLLAMA_CONTEXT_LENGTH', 'OLLAMA_KV_CACHE_TYPE', 'OLLAMA_FLASH_ATTENTION'
+$keep = 'OLLAMA_NUM_PARALLEL', 'OLLAMA_MAX_LOADED_MODELS', 'OLLAMA_CONTEXT_LENGTH', 'OLLAMA_KV_CACHE_TYPE', 'OLLAMA_FLASH_ATTENTION'
+# versionierte Einstellungen (ollama\env.json); deren Variablen werden beim Neustart ebenfalls übernommen
+$envFile = Join-Path $PSScriptRoot '..\ollama\env.json'
+$envCfg = if (Test-Path $envFile) { (Get-Content $envFile -Raw -Encoding UTF8 | ConvertFrom-Json).variablen } else { $null }
+if ($envCfg) { $keep = @($keep + @($envCfg.PSObject.Properties.Name) | Where-Object { $vars -notcontains $_ } | Select-Object -Unique) }
+
+if ($Mode -eq 'apply') {
+  if (-not $envCfg) { throw "$envFile nicht gefunden" }
+  foreach ($p in $envCfg.PSObject.Properties) {
+    $old = [Environment]::GetEnvironmentVariable($p.Name, 'User')
+    if ($old -ne [string]$p.Value) {
+      Write-Host ('  {0,-26} {1} -> {2}' -f $p.Name, $(if ($null -eq $old) { '(nicht gesetzt)' } else { $old }), $p.Value)
+      [Environment]::SetEnvironmentVariable($p.Name, [string]$p.Value, 'User')
+    }
+  }
+  $Mode = 'restart'
+}
 
 function Get-Devices([int]$FromLine = 0, [string]$Path = $log) {
   # "inference compute" Zeilen: library, name=Vulkan0, description, total

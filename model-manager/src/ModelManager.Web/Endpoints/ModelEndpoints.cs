@@ -15,11 +15,13 @@ public static class ModelEndpoints
             Results.Ok(await service.GetModelsAsync(ct)));
 
         // name in the body: model names can contain "/" (e.g. hf.co/...)
-        api.MapPost("/load", (ModelRequest req, ModelService service, ILogger<ModelService> log, CancellationToken ct) =>
-            Run("load", req, () => service.LoadAsync(req.Name, ct), log));
+        // not bound to the request: if the browser reloads or closes, Ollama keeps loading
+        // (a cancelled request makes Ollama abort the load, HTTP 499)
+        api.MapPost("/load", (ModelRequest req, ModelService service, ILogger<ModelService> log) =>
+            Run("load", req, () => service.LoadAsync(req.Name, CancellationToken.None), log));
 
-        api.MapPost("/unload", (ModelRequest req, ModelService service, ILogger<ModelService> log, CancellationToken ct) =>
-            Run("unload", req, () => service.UnloadAsync(req.Name, ct), log));
+        api.MapPost("/unload", (ModelRequest req, ModelService service, ILogger<ModelService> log) =>
+            Run("unload", req, () => service.UnloadAsync(req.Name, CancellationToken.None), log));
 
         // restart of the native Ollama through the host agent (scripts/ollama-restart-agent.ps1)
         api.MapGet("/restart", (IOllamaRestarter restarter) => Results.Ok(restarter.GetStatus()));

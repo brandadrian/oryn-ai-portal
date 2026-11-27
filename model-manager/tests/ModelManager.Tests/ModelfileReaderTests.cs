@@ -21,6 +21,7 @@ public class ModelfileReaderTests
             "#   Basis: Qwen 3.8 27B",
             "",
             "FROM qwen3.8:27b",
+            "PARAMETER num_ctx 131072",
         ];
 
         var model = ModelfileReader.Parse(lines, "qwen3.8-27b-q4-128k.Modelfile");
@@ -29,6 +30,7 @@ public class ModelfileReaderTests
         Assert.Equal("qwen3.8:27b-q4-128k", model.Name);
         Assert.Equal("Standard-Qwen 3.8 27B ohne Anpassungen. Allgemeiner Chat.", model.Description);
         Assert.Equal("qwen3.8-27b-q4-128k.Modelfile", model.File);
+        Assert.Equal(131072, model.NumCtx);
     }
 
     [Fact]
@@ -39,6 +41,7 @@ public class ModelfileReaderTests
         Assert.NotNull(model);
         Assert.Equal("my:model", model.Name);
         Assert.Equal("", model.Description);
+        Assert.Null(model.NumCtx);
     }
 
     [Fact]

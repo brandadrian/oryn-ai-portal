@@ -1,20 +1,26 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
-let models = [], busy = false, restartRunning = false;
+let models = [], busy = false, restartRunning = false, lastActive;
 
+const ctx = n => n ? (n >= 1024 ? Math.round(n / 1024) + 'k' : n) + ' Kontext' : '';
 const gb = b => (b / 1024 ** 3).toFixed(1) + ' GB';
 const time = t => new Date(t).toLocaleString('de-CH', { weekday:'short', hour:'2-digit', minute:'2-digit' });
-const opt = m => `<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}${m.loaded ? '  ● aktiv' : ''}</option>`;
+const opt = m => `<option value="${m.name.replace(/"/g,'&quot;')}">${m.name}${m.loaded ? ' (aktiv)' : ''}</option>`;
 
 function render() {
   const active = models.find(m => m.loaded);
   $('dot').className = 'dot' + (active ? ' on' : '');
   $('activeName').textContent = active ? active.name : 'Kein Modell geladen';
   const where = active ? (active.gpuPercent >= 100 ? 'ganz auf der GPU' : `${active.gpuPercent}% GPU / ${100 - active.gpuPercent}% CPU`) : '';
-  $('activeSub').textContent = active ? `${gb(active.sizeVram)} VRAM, ${where} · bis ${time(active.expiresAt)}` : '';
+  $('activeSub').textContent = active
+    ? [ctx(active.contextLength), `${gb(active.sizeVram)} VRAM, ${where}`, `bis ${time(active.expiresAt)}`].filter(Boolean).join(' · ')
+    : '';
 
-  const selected = $('model').value || active?.name;
+  // aktives Modell vorauswählen (beim Start und wenn ein anderes geladen wurde), sonst Auswahl behalten
+  const activeChanged = active?.name !== lastActive;
+  lastActive = active?.name;
+  const selected = (activeChanged && active) ? active.name : ($('model').value || active?.name);
   const mine = models.filter(m => m.configured && m.installed);
   const other = models.filter(m => !m.configured && m.installed);
   $('model').innerHTML = `<optgroup label="Meine Modelle">${mine.map(opt).join('')}</optgroup>`
@@ -25,7 +31,7 @@ function render() {
 
 function update() {
   const m = models.find(x => x.name === $('model').value);
-  $('desc').textContent = m?.description || '';
+  $('desc').textContent = [ctx(m?.contextLength), m?.description].filter(Boolean).join(' · ');
   $('load').disabled = busy || !m || m.loaded;
   $('unload').disabled = busy || !models.some(x => x.loaded);
   $('restart').disabled = busy || restartRunning;
@@ -67,6 +73,10 @@ async function act(action, name, label) {
 }
 
 $('model').onchange = update;
+$('refresh').onclick = () => {
+  const b = $('refresh'); b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin');
+  refresh(); refreshRestart();
+};
 $('load').onclick = () => act('load', $('model').value, 'Lade');
 $('unload').onclick = () => act('unload', models.find(m => m.loaded).name, 'Entlade');
 $('restart').onclick = async () => {

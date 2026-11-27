@@ -37,7 +37,8 @@ public sealed class ModelService(IOllamaClient ollama, IOptions<ModelManagerOpti
             var run = loaded.FirstOrDefault(l => l.Name == name);
             return new ModelStatus(name, cfg?.Description, cfg?.File, cfg is not null,
                 inst is not null || run is not null, inst?.Size,
-                run is not null, run?.SizeVram, GpuPercent(run), run?.ExpiresAt);
+                run is not null, run?.SizeVram, GpuPercent(run), run?.ExpiresAt,
+                run?.ContextLength ?? cfg?.NumCtx);
         }).ToList();
     }
 

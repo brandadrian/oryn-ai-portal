@@ -15,7 +15,8 @@ public sealed class OllamaClient(HttpClient http) : IOllamaClient
         string Name,
         long Size,
         [property: JsonPropertyName("size_vram")] long SizeVram,
-        [property: JsonPropertyName("expires_at")] DateTimeOffset ExpiresAt);
+        [property: JsonPropertyName("expires_at")] DateTimeOffset ExpiresAt,
+        [property: JsonPropertyName("context_length")] int? ContextLength);
 
     public async Task<IReadOnlyList<InstalledModel>> GetInstalledAsync(CancellationToken ct)
     {
@@ -26,7 +27,7 @@ public sealed class OllamaClient(HttpClient http) : IOllamaClient
     public async Task<IReadOnlyList<LoadedModel>> GetLoadedAsync(CancellationToken ct)
     {
         var res = await http.GetFromJsonAsync<ListResponse<Running>>("/api/ps", ct);
-        return (res?.Models ?? []).Select(r => new LoadedModel(r.Name, r.Size, r.SizeVram, r.ExpiresAt)).ToList();
+        return (res?.Models ?? []).Select(r => new LoadedModel(r.Name, r.Size, r.SizeVram, r.ExpiresAt, r.ContextLength)).ToList();
     }
 
     public async Task<OllamaResult> SetKeepAliveAsync(string model, string keepAlive, CancellationToken ct)

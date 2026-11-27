@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oryn Modelle</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="card">
+  <h1>Ollama-Modell</h1>
+  <div class="active">
+    <span class="dot" id="dot"></span>
+    <div><div class="name" id="activeName">…</div><div class="sub" id="activeSub"></div></div>
+  </div>
+  <select id="model" aria-label="Modell"></select>
+  <div class="desc sub" id="desc"></div>
+  <div class="buttons">
+    <button class="primary" id="load">Laden</button>
+    <button class="danger" id="unload">Entladen</button>
+  </div>
+  <button class="restart" id="restart" hidden>Ollama neu starten</button>
+  <div class="msg sub" id="msg"></div>
+</div>
+<script src="js/app.js"></script>
+</body>
+</html>

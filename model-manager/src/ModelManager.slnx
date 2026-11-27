@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../tests/ModelManager.Tests/ModelManager.Tests.csproj" />
+  <Project Path="ModelManager.Adapters.Ollama/ModelManager.Adapters.Ollama.csproj" />
+  <Project Path="ModelManager.Api/ModelManager.Api.csproj" />
+  <Project Path="ModelManager.Core/ModelManager.Core.csproj" />
+</Solution>

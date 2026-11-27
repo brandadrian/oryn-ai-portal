@@ -1,0 +1,39 @@
+# Model-Manager: Ollama-Modelle laden/entladen (Modelle aus models/*.Modelfile), mit Login (Basic Auth aus .env).
+# Start (im Ordner model-manager/):  docker compose up -d --build
+#   https://management.oryn.brandadrian.com   https://management.localhost (lokal)
+name: model-manager
+
+services:
+  model-manager:
+    build: .
+    image: oryn-model-manager
+    container_name: model-manager
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - Manager__OllamaUrl=http://host.docker.internal:11434
+      - Manager__ModelsDir=/models
+      - Manager__KeepAlive=24h
+      - Manager__RestartDir=/host   # Neustart über scripts/ollama-restart-agent.ps1 (Windows)
+    volumes:
+      - ../models:/models:ro
+      - ${LOCALAPPDATA}/Oryn/model-manager:/host
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.model-manager.rule=Host(`management.oryn.brandadrian.com`)
+      - traefik.http.routers.model-manager.entrypoints=websecure
+      - traefik.http.routers.model-manager.tls.certresolver=le
+      - traefik.http.routers.model-manager.service=model-manager
+      - traefik.http.routers.model-manager-local.rule=Host(`management.localhost`)
+      - traefik.http.routers.model-manager-local.entrypoints=websecure
+      - traefik.http.routers.model-manager-local.tls=true
+      - traefik.http.routers.model-manager-local.service=model-manager
+      - traefik.http.services.model-manager.loadbalancer.server.port=8080
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true

@@ -82,6 +82,7 @@ scripts/         ollama-gpu.ps1: Ollama-Karten umschalten (beide / nur R9700 / n
 ollama-monitor/  OllamaMonitor (.NET 10, ollama-monitor.slnx): Windows-Dienst für Hardware + Ollama-Metriken,
                  Dockerfile für den optionalen Container (ohne Hardware-Werte)
 openwebui/       Open WebUI: Chat und Modellverwaltung mit Login             → docs/openwebui.md
+model-manager/   Web-UI: Ollama-Modelle laden/entladen, https://management.oryn.brandadrian.com → model-manager/README.md
 docs/            Detail-Dokumentation
 ```
 

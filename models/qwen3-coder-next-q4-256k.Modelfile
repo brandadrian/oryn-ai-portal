@@ -1,0 +1,29 @@
+# ============================================================
+# qwen3-coder-next:q4-256k
+# ============================================================
+#
+# WOFÜR
+#   Schnelles Code-Modell: Programmieren, Code lesen und erklären, Refactoring,
+#   Skripte, Agenten mit Tool-Calls. MoE mit nur ca. 3B aktiven Parametern pro Token.
+#
+# EIGENSCHAFTEN
+#   Basis:         Qwen3-Coder-Next 80B-A3B (MoE, Hybrid-Attention), Q4_K_M
+#                  (Tag qwen3-coder-next:q4_K_M = :latest, ca. 52 GB / 48 GiB)
+#   Kontext:       256k Tokens (Modell-Maximum 262144). Nur 12 von 48 Layern haben
+#                  klassischen KV-Cache, daher kostet der volle Kontext wenig VRAM.
+#                  Braucht beide R9700 (Mode both), nicht gleichzeitig mit anderen Modellen.
+#   Kein Denkmodus (antwortet direkt), keine Vision.
+#   Sampling:      Standardwerte des Basismodells (temperature 1, top_k 40, top_p 0.95)
+#   System-Prompt: keiner
+#
+# PARAMETER
+#   use_mmap false  Modell nicht als RAM-Kopie gemappt halten (spart RAM, Tempo gleich)
+#   num_ctx 262144  voller Kontext des Modells
+#
+# ERSTELLEN
+#   ollama create qwen3-coder-next:q4-256k -f models/qwen3-coder-next-q4-256k.Modelfile
+# ============================================================
+FROM qwen3-coder-next:q4_K_M
+
+PARAMETER num_ctx 262144
+PARAMETER use_mmap false

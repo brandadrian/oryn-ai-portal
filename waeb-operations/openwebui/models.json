@@ -6,7 +6,7 @@
     "qwen3.8:27b-analyse-q4-128k",
     "qwen3.8:27b-q8-256k",
     "qwen3.8:27b-q4-256k",
-    "qwen3.5:9b"
+    "qwen3-coder-next:q4-256k"
   ],
   "umgebungen": {
     "prod": {
@@ -66,6 +66,12 @@
       "basis": "qwen3.8:27b-q4-256k",
       "name": "{label} · Langer Kontext",
       "description": "{label} {shop}: sehr lange Eingaben und Verläufe (grosse Logs, viele Dateien). ~50 Token/s, 256k Kontext."
+    },
+    {
+      "suffix": "code",
+      "basis": "qwen3-coder-next:q4-256k",
+      "name": "{label} · Code",
+      "description": "{label} {shop}: Plugin- und Shopware-Code lesen, erklären und schreiben, SQL und Skripte. Schnell (Qwen3 Coder Next 80B-A3B), 256k Kontext, auf beiden R9700."
     }
   ],
   "agenten": [

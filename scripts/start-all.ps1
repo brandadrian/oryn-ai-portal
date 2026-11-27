@@ -1,7 +1,7 @@
-<#
+﻿<#
 .SYNOPSIS
   Startet den kompletten Oryn-Stack in Docker: Gateway, Website, Monitoring, API, Gmail-MCP,
-  Open WebUI (chat.oryn) und waeb-operations.
+  Open WebUI (chat.oryn), waeb-operations und Model-Manager (management.oryn).
 
 .DESCRIPTION
   - startet Docker Desktop, falls die Engine nicht läuft, und wartet bis zu 5 Minuten
@@ -29,7 +29,8 @@ $stacks = @(
   (Join-Path $portal 'api'),
   (Join-Path $gateway 'gmail-mcp'),
   (Join-Path $portal 'openwebui'),
-  (Join-Path $portal 'waeb-operations')
+  (Join-Path $portal 'waeb-operations'),
+  (Join-Path $portal 'model-manager')
 )
 
 $logDir = Join-Path $env:LOCALAPPDATA 'Oryn'

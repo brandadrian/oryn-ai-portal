@@ -63,6 +63,7 @@ services:
     restart: unless-stopped
 
   loki-mcp-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     build: ./mcp/loki
     environment:
       <<: *loki-env
@@ -88,6 +89,7 @@ services:
     restart: unless-stopped
 
   files-mcp-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     build: ./mcp/files
     environment:
       <<: *files-env
@@ -110,6 +112,7 @@ services:
     restart: unless-stopped
 
   mysql-mcp-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     build: ./mcp/mysql
     environment:
       MYSQL_HOST: waeb-ops-tunnel
@@ -144,6 +147,7 @@ services:
     restart: unless-stopped
 
   shopware-mcp-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     image: ghcr.io/open-webui/mcpo:main
     environment:
       SHOPWARE_API_URL: ${SHOPWARE_STAGING_URL:?SHOPWARE_STAGING_URL setzen}
@@ -265,6 +269,7 @@ services:
       - proxy
 
   open-webui-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     image: ghcr.io/open-webui/open-webui:v0.13.4
     environment:
       - WEBUI_NAME=WAEB STAGING
@@ -316,6 +321,7 @@ services:
 
   # Spielt Modelle (models.json, nur Umgebung STAGING) und Skills in die STAGING-Instanz ein
   setup-staging:
+    profiles: [staging]   # startet nur mit --profile staging
     image: ghcr.io/open-webui/open-webui:v0.13.4
     restart: "no"
     depends_on: [open-webui-staging]
@@ -335,6 +341,7 @@ services:
   # Log-Dashboard (Production, Staging, Server) – eigenes Grafana mit Login, NICHT das öffentliche Oryn-Grafana
   # (dort ist anonymer Zugriff an; Server-Logs gehören nicht dorthin). Nur lokal erreichbar.
   grafana:
+    profiles: [grafana]   # deaktiviert, startet nur mit --profile grafana
     image: grafana/grafana:13.3.0
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
